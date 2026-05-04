@@ -1,0 +1,497 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Debt Tracker</title>
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #0d0d0d;
+    --surface: #161616;
+    --card: #1e1e1e;
+    --border: #2a2a2a;
+    --accent: #e63946;
+    --accent2: #ff6b6b;
+    --text: #f0f0f0;
+    --muted: #777;
+    --green: #2ecc71;
+    --yellow: #f39c12;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'DM Sans', sans-serif;
+    min-height: 100vh;
+    padding: 20px 16px 80px;
+  }
+  header { text-align: center; margin-bottom: 24px; }
+  header h1 {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 3rem;
+    letter-spacing: 4px;
+    color: var(--accent);
+    line-height: 1;
+  }
+  header p { color: var(--muted); font-size: 0.75rem; margin-top: 4px; letter-spacing: 2px; text-transform: uppercase; }
+
+  /* SUMMARY */
+  .summary-grid { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 10px; margin-bottom: 20px; }
+  .summary-card { border-radius: 12px; padding: 16px 14px; border: 1px solid var(--border); }
+  .summary-card.total { background: linear-gradient(135deg, #e63946, #8b0000); border-color: transparent; }
+  .summary-card.owed  { background: var(--surface); }
+  .summary-card.spaid { background: var(--surface); }
+  .s-label { font-size: 0.6rem; letter-spacing: 2px; text-transform: uppercase; opacity: 0.7; margin-bottom: 6px; }
+  .s-amount { font-family: 'Bebas Neue', sans-serif; font-size: 1.6rem; letter-spacing: 1px; line-height: 1; }
+  .summary-card.owed  .s-amount { color: var(--accent2); }
+  .summary-card.spaid .s-amount { color: var(--green); }
+
+  /* FILTER */
+  .filter-tabs { display: flex; gap: 8px; margin-bottom: 16px; }
+  .tab { flex: 1; padding: 10px; border-radius: 8px; border: 1px solid var(--border); background: var(--surface); color: var(--muted); font-size: 0.75rem; letter-spacing: 1px; text-transform: uppercase; cursor: pointer; text-align: center; transition: all 0.2s; }
+  .tab.active-all  { background: var(--card); color: var(--text); border-color: #555; }
+  .tab.active-owed { background: rgba(230,57,70,0.15); color: var(--accent2); border-color: var(--accent); }
+  .tab.active-paid { background: rgba(46,204,113,0.12); color: var(--green); border-color: var(--green); }
+
+  /* ADD FORM */
+  .add-section { background: var(--surface); border-radius: 14px; border: 1px solid var(--border); padding: 18px; margin-bottom: 16px; }
+  .add-section h3 { font-size: 0.62rem; letter-spacing: 3px; text-transform: uppercase; color: var(--muted); margin-bottom: 12px; }
+  .add-grid { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 8px; margin-bottom: 10px; }
+  .add-grid input {
+    background: var(--card); border: 1px solid var(--border); color: var(--text);
+    border-radius: 8px; padding: 11px 12px; font-family: 'DM Sans', sans-serif;
+    font-size: 0.85rem; outline: none; transition: border-color 0.15s; width: 100%;
+  }
+  .add-grid input:focus { border-color: var(--accent); }
+  .add-grid input::placeholder { color: var(--muted); }
+  .btn-add {
+    width: 100%; background: var(--accent); color: white; border: none; border-radius: 8px;
+    padding: 12px; font-family: 'Bebas Neue', sans-serif; font-size: 1.05rem;
+    letter-spacing: 3px; cursor: pointer; transition: background 0.2s, transform 0.1s;
+  }
+  .btn-add:hover { background: #c1121f; }
+  .btn-add:active { transform: scale(0.98); }
+
+  /* DEBT CARDS */
+  .debt-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    margin-bottom: 12px;
+    overflow: hidden;
+    transition: border-color 0.2s;
+  }
+  .debt-card.fully-paid { border-color: rgba(46,204,113,0.3); opacity: 0.65; }
+  .debt-card.partial    { border-color: rgba(243,156,18,0.3); }
+
+  .card-header {
+    display: flex;
+    align-items: center;
+    padding: 14px 16px;
+    gap: 12px;
+    cursor: pointer;
+    user-select: none;
+  }
+  .card-header:hover { background: rgba(255,255,255,0.02); }
+
+  .card-name {
+    flex: 1;
+    font-weight: 600;
+    font-size: 1rem;
+  }
+  .card-name.struck { text-decoration: line-through; color: var(--muted); }
+
+  .card-date { font-size: 0.72rem; color: var(--muted); }
+
+  .card-amounts { text-align: right; }
+  .card-left {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 1.4rem;
+    letter-spacing: 1px;
+    line-height: 1;
+  }
+  .card-left.owed    { color: var(--accent2); }
+  .card-left.partial { color: var(--yellow); }
+  .card-left.done    { color: var(--green); }
+
+  .card-original { font-size: 0.7rem; color: var(--muted); margin-top: 2px; }
+
+  .card-chevron {
+    color: var(--muted);
+    font-size: 0.8rem;
+    transition: transform 0.25s;
+    margin-left: 4px;
+  }
+  .card-chevron.open { transform: rotate(180deg); }
+
+  /* EXPANDED PANEL */
+  .card-panel {
+    display: none;
+    border-top: 1px solid var(--border);
+    padding: 16px;
+    background: var(--card);
+  }
+  .card-panel.open { display: block; }
+
+  /* PROGRESS BAR */
+  .progress-wrap { margin-bottom: 14px; }
+  .progress-label { display: flex; justify-content: space-between; font-size: 0.72rem; color: var(--muted); margin-bottom: 6px; }
+  .progress-bar { height: 6px; background: var(--border); border-radius: 4px; overflow: hidden; }
+  .progress-fill { height: 100%; border-radius: 4px; transition: width 0.4s ease; }
+  .progress-fill.partial { background: var(--yellow); }
+  .progress-fill.done    { background: var(--green); }
+  .progress-fill.none    { background: var(--accent); width: 0% !important; }
+
+  /* PAYMENT LOG */
+  .payments-title { font-size: 0.62rem; letter-spacing: 2px; text-transform: uppercase; color: var(--muted); margin-bottom: 10px; }
+  .payment-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 8px 10px;
+    background: var(--surface);
+    border-radius: 8px;
+    margin-bottom: 6px;
+    font-size: 0.83rem;
+  }
+  .payment-date  { color: var(--muted); font-size: 0.72rem; }
+  .payment-amt   { font-family: 'Bebas Neue', sans-serif; font-size: 1.1rem; color: var(--green); letter-spacing: 1px; }
+  .payment-del   { background: none; border: none; cursor: pointer; color: var(--accent); font-size: 0.85rem; padding: 2px 6px; border-radius: 4px; }
+  .payment-del:hover { background: rgba(230,57,70,0.15); }
+
+  /* ADD PAYMENT */
+  .pay-form { display: flex; gap: 8px; margin-top: 12px; }
+  .pay-form input {
+    background: var(--surface); border: 1px solid var(--border); color: var(--text);
+    border-radius: 8px; padding: 10px 12px; font-family: 'DM Sans', sans-serif;
+    font-size: 0.85rem; outline: none; transition: border-color 0.15s; flex: 1;
+  }
+  .pay-form input:focus { border-color: var(--green); }
+  .pay-form input::placeholder { color: var(--muted); }
+  .btn-pay {
+    background: rgba(46,204,113,0.15); color: var(--green); border: 1px solid rgba(46,204,113,0.3);
+    border-radius: 8px; padding: 10px 14px; font-family: 'Bebas Neue', sans-serif;
+    font-size: 0.95rem; letter-spacing: 2px; cursor: pointer; white-space: nowrap;
+    transition: background 0.2s;
+  }
+  .btn-pay:hover { background: rgba(46,204,113,0.25); }
+
+  /* CARD ACTIONS */
+  .card-actions { display: flex; gap: 8px; margin-top: 14px; padding-top: 14px; border-top: 1px solid var(--border); }
+  .btn-edit-card {
+    flex: 1; background: rgba(243,156,18,0.1); color: var(--yellow);
+    border: 1px solid rgba(243,156,18,0.2); border-radius: 8px; padding: 9px;
+    font-size: 0.78rem; letter-spacing: 1px; text-transform: uppercase; cursor: pointer;
+    transition: background 0.2s;
+  }
+  .btn-edit-card:hover { background: rgba(243,156,18,0.2); }
+  .btn-del-card {
+    flex: 1; background: rgba(230,57,70,0.1); color: var(--accent2);
+    border: 1px solid rgba(230,57,70,0.2); border-radius: 8px; padding: 9px;
+    font-size: 0.78rem; letter-spacing: 1px; text-transform: uppercase; cursor: pointer;
+    transition: background 0.2s;
+  }
+  .btn-del-card:hover { background: rgba(230,57,70,0.2); }
+
+  /* EDIT NAME/AMOUNT INLINE */
+  .edit-fields { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 10px; }
+  .edit-fields input {
+    background: var(--surface); border: 1px solid var(--accent); color: var(--text);
+    border-radius: 8px; padding: 10px 12px; font-family: 'DM Sans', sans-serif;
+    font-size: 0.85rem; outline: none; width: 100%;
+  }
+  .btn-save-edit {
+    width: 100%; background: rgba(230,57,70,0.15); color: var(--accent2);
+    border: 1px solid rgba(230,57,70,0.3); border-radius: 8px; padding: 9px;
+    font-family: 'Bebas Neue', sans-serif; font-size: 0.95rem; letter-spacing: 2px;
+    cursor: pointer; transition: background 0.2s;
+  }
+  .btn-save-edit:hover { background: rgba(230,57,70,0.25); }
+
+  /* EMPTY */
+  .empty { text-align: center; padding: 40px 20px; color: var(--muted); font-size: 0.83rem; }
+  .empty span { display: block; font-size: 2rem; margin-bottom: 8px; }
+
+  /* SAVE BADGE */
+  .save-badge {
+    display: flex; align-items: center; justify-content: center; gap: 6px;
+    font-size: 0.7rem; color: var(--green); letter-spacing: 1px; text-transform: uppercase;
+    margin-bottom: 10px; opacity: 0; transition: opacity 0.4s;
+  }
+  .save-badge.show { opacity: 1; }
+  .save-badge::before { content: '●'; animation: pulse 1s infinite; }
+  @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:0.3} }
+
+  @media (max-width: 480px) {
+    .add-grid { grid-template-columns: 1fr; }
+    .summary-grid { grid-template-columns: 1fr; }
+    header h1 { font-size: 2.2rem; }
+    .s-amount { font-size: 1.3rem !important; }
+    .edit-fields { grid-template-columns: 1fr; }
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <h1>Debt Tracker</h1>
+  <p>Log partial payments — balance updates instantly</p>
+</header>
+
+<div class="summary-grid">
+  <div class="summary-card total">
+    <div class="s-label">Total Debt</div>
+    <div class="s-amount" id="sumTotal">£0.00</div>
+  </div>
+  <div class="summary-card owed">
+    <div class="s-label">Still Owed</div>
+    <div class="s-amount" id="sumOwed">£0.00</div>
+  </div>
+  <div class="summary-card spaid">
+    <div class="s-label">Collected</div>
+    <div class="s-amount" id="sumPaid">£0.00</div>
+  </div>
+</div>
+
+<div class="save-badge" id="saveBadge">Saved</div>
+
+<div class="filter-tabs">
+  <div class="tab active-all" id="tabAll"    onclick="setFilter('all')">All</div>
+  <div class="tab"            id="tabUnpaid" onclick="setFilter('unpaid')">Unpaid</div>
+  <div class="tab"            id="tabPaid"   onclick="setFilter('paid')">Fully Paid</div>
+</div>
+
+<div class="add-section">
+  <h3>Add New Debt</h3>
+  <div class="add-grid">
+    <input type="date"   id="newDate">
+    <input type="text"   id="newName"   placeholder="Name">
+    <input type="number" id="newAmount" placeholder="£ Total Owed" step="0.01" min="0">
+  </div>
+  <button class="btn-add" onclick="addDebt()">+ ADD DEBT</button>
+</div>
+
+<div id="debtList"></div>
+
+<script>
+  let debts = [];
+  let currentFilter = 'all';
+  let openCards = new Set();
+  let editingCards = new Set();
+
+  function load() {
+    const s = localStorage.getItem('debtTracker_v3');
+    if (s) debts = JSON.parse(s);
+    render();
+  }
+
+  function save() {
+    localStorage.setItem('debtTracker_v3', JSON.stringify(debts));
+    const b = document.getElementById('saveBadge');
+    b.classList.add('show');
+    setTimeout(() => b.classList.remove('show'), 2000);
+  }
+
+  function genId() { return Date.now().toString(36) + Math.random().toString(36).slice(2); }
+
+  function fmt(n) { return '£' + parseFloat(n || 0).toFixed(2); }
+
+  function fmtDate(str) {
+    if (!str) return '—';
+    const [y,m,d] = str.split('-');
+    return d+'/'+m+'/'+y;
+  }
+
+  function todayStr() { return new Date().toISOString().split('T')[0]; }
+
+  function totalPaid(d) { return (d.payments || []).reduce((s,p) => s + parseFloat(p.amount), 0); }
+  function leftToPay(d) { return Math.max(0, parseFloat(d.original) - totalPaid(d)); }
+  function isFullyPaid(d) { return leftToPay(d) <= 0; }
+  function paidPct(d) { return Math.min(100, (totalPaid(d) / parseFloat(d.original)) * 100); }
+
+  function setFilter(f) {
+    currentFilter = f;
+    document.getElementById('tabAll').className    = 'tab' + (f==='all'    ? ' active-all'  : '');
+    document.getElementById('tabUnpaid').className = 'tab' + (f==='unpaid' ? ' active-owed' : '');
+    document.getElementById('tabPaid').className   = 'tab' + (f==='paid'   ? ' active-paid' : '');
+    render();
+  }
+
+  function calcSummary() {
+    let total = 0, collected = 0;
+    debts.forEach(d => { total += parseFloat(d.original); collected += totalPaid(d); });
+    return { total, collected, owed: total - collected };
+  }
+
+  function render() {
+    const { total, collected, owed } = calcSummary();
+    document.getElementById('sumTotal').textContent = fmt(total);
+    document.getElementById('sumOwed').textContent  = fmt(owed);
+    document.getElementById('sumPaid').textContent  = fmt(collected);
+
+    let list = debts;
+    if (currentFilter === 'unpaid') list = debts.filter(d => !isFullyPaid(d));
+    if (currentFilter === 'paid')   list = debts.filter(d =>  isFullyPaid(d));
+
+    const container = document.getElementById('debtList');
+
+    if (list.length === 0) {
+      const msg = currentFilter === 'paid'   ? 'No fully paid debts yet.'
+                : currentFilter === 'unpaid' ? 'No unpaid debts — all clear! ✅'
+                : 'No debts yet. Add one above.';
+      container.innerHTML = '<div class="empty"><span>💳</span>' + msg + '</div>';
+      return;
+    }
+
+    container.innerHTML = list.map(d => buildCard(d)).join('');
+  }
+
+  function buildCard(d) {
+    const paid    = totalPaid(d);
+    const left    = leftToPay(d);
+    const pct     = paidPct(d);
+    const full    = isFullyPaid(d);
+    const partial = paid > 0 && !full;
+
+    const cardClass = full ? 'fully-paid' : partial ? 'partial' : '';
+    const leftClass = full ? 'done' : partial ? 'partial' : 'owed';
+    const nameClass = full ? 'struck' : '';
+    const isOpen    = openCards.has(d.id);
+    const isEditing = editingCards.has(d.id);
+    const chevClass = isOpen ? 'open' : '';
+    const barClass  = full ? 'done' : partial ? 'partial' : 'none';
+
+    const paymentRows = (d.payments || []).map((p, i) =>
+      '<div class="payment-item">'
+      + '<span class="payment-date">' + fmtDate(p.date) + '</span>'
+      + '<span class="payment-amt">+ ' + fmt(p.amount) + '</span>'
+      + '<button class="payment-del" onclick="deletePayment(\'' + d.id + '\',' + i + ')">✕</button>'
+      + '</div>'
+    ).join('');
+
+    const editSection = isEditing ? (
+      '<div class="edit-fields">'
+      + '<input type="text" id="en_' + d.id + '" value="' + d.name + '" placeholder="Name">'
+      + '<input type="number" id="ea_' + d.id + '" value="' + d.original + '" step="0.01" min="0" placeholder="£ Total">'
+      + '</div>'
+      + '<button class="btn-save-edit" onclick="saveCardEdit(\'' + d.id + '\')">SAVE CHANGES</button>'
+    ) : '';
+
+    const panel = isOpen ? (
+      '<div class="card-panel open">'
+      + '<div class="progress-wrap">'
+      + '<div class="progress-label"><span>Paid: ' + fmt(paid) + '</span><span>Left: ' + fmt(left) + '</span></div>'
+      + '<div class="progress-bar"><div class="progress-fill ' + barClass + '" style="width:' + pct + '%"></div></div>'
+      + '</div>'
+      + (d.payments && d.payments.length ? '<div class="payments-title">Payment History</div>' + paymentRows : '')
+      + (full ? '<div style="text-align:center;color:var(--green);font-size:0.8rem;padding:8px 0">✓ Fully paid — no balance remaining</div>'
+              : '<div class="payments-title" style="margin-top:12px">Log a Payment</div>'
+                + '<div class="pay-form">'
+                + '<input type="date" id="pd_' + d.id + '" value="' + todayStr() + '">'
+                + '<input type="number" id="pa_' + d.id + '" placeholder="£ Amount paid" step="0.01" min="0.01" max="' + left + '">'
+                + '<button class="btn-pay" onclick="addPayment(\'' + d.id + '\')">+ PAY</button>'
+                + '</div>'
+      )
+      + '<div class="card-actions">'
+      + '<button class="btn-edit-card" onclick="toggleEdit(\'' + d.id + '\')">' + (isEditing ? 'CANCEL EDIT' : '✎ EDIT') + '</button>'
+      + '<button class="btn-del-card"  onclick="deleteDebt(\'' + d.id + '\')">🗑 DELETE</button>'
+      + '</div>'
+      + editSection
+      + '</div>'
+    ) : '';
+
+    return '<div class="debt-card ' + cardClass + '" id="card_' + d.id + '">'
+      + '<div class="card-header" onclick="toggleCard(\'' + d.id + '\')">'
+      + '<div>'
+      + '<div class="card-name ' + nameClass + '">' + d.name + '</div>'
+      + '<div class="card-date">' + fmtDate(d.date) + '</div>'
+      + '</div>'
+      + '<div class="card-amounts">'
+      + '<div class="card-left ' + leftClass + '">' + fmt(left) + '</div>'
+      + '<div class="card-original">of ' + fmt(d.original) + '</div>'
+      + '</div>'
+      + '<span class="card-chevron ' + chevClass + '">▼</span>'
+      + '</div>'
+      + panel
+      + '</div>';
+  }
+
+  function toggleCard(id) {
+    if (openCards.has(id)) { openCards.delete(id); editingCards.delete(id); }
+    else openCards.add(id);
+    render();
+  }
+
+  function toggleEdit(id) {
+    if (editingCards.has(id)) editingCards.delete(id);
+    else editingCards.add(id);
+    render();
+    if (editingCards.has(id)) {
+      setTimeout(() => { const el = document.getElementById('en_' + id); if (el) el.focus(); }, 50);
+    }
+  }
+
+  function saveCardEdit(id) {
+    const nameEl = document.getElementById('en_' + id);
+    const amtEl  = document.getElementById('ea_' + id);
+    if (!nameEl || !amtEl) return;
+    const name = nameEl.value.trim();
+    const amt  = parseFloat(amtEl.value);
+    if (!name || isNaN(amt) || amt <= 0) { alert('Please enter a valid name and amount.'); return; }
+    const idx = debts.findIndex(d => d.id === id);
+    if (idx !== -1) { debts[idx].name = name; debts[idx].original = amt; }
+    editingCards.delete(id);
+    save(); render();
+  }
+
+  function addPayment(id) {
+    const dateEl = document.getElementById('pd_' + id);
+    const amtEl  = document.getElementById('pa_' + id);
+    if (!dateEl || !amtEl) return;
+    const amt = parseFloat(amtEl.value);
+    if (isNaN(amt) || amt <= 0) { alert('Enter a valid payment amount.'); return; }
+    const idx = debts.findIndex(d => d.id === id);
+    if (idx === -1) return;
+    const left = leftToPay(debts[idx]);
+    if (amt > left + 0.001) { alert('Payment ('+fmt(amt)+') exceeds remaining balance ('+fmt(left)+').'); return; }
+    if (!debts[idx].payments) debts[idx].payments = [];
+    debts[idx].payments.push({ date: dateEl.value, amount: amt });
+    save(); render();
+  }
+
+  function deletePayment(id, i) {
+    if (!confirm('Remove this payment?')) return;
+    const idx = debts.findIndex(d => d.id === id);
+    if (idx !== -1) debts[idx].payments.splice(i, 1);
+    save(); render();
+  }
+
+  function addDebt() {
+    const date   = document.getElementById('newDate').value;
+    const name   = document.getElementById('newName').value.trim();
+    const amount = parseFloat(document.getElementById('newAmount').value);
+    if (!name || isNaN(amount) || amount <= 0) { alert('Please enter a name and amount.'); return; }
+    debts.push({ id: genId(), date, name, original: amount, payments: [] });
+    save(); render();
+    document.getElementById('newName').value   = '';
+    document.getElementById('newAmount').value = '';
+    document.getElementById('newDate').value   = todayStr();
+  }
+
+  function deleteDebt(id) {
+    if (!confirm('Delete this debt entirely?')) return;
+    debts = debts.filter(d => d.id !== id);
+    openCards.delete(id); editingCards.delete(id);
+    save(); render();
+  }
+
+  ['newName','newAmount'].forEach(id => {
+    document.getElementById(id).addEventListener('keydown', e => { if (e.key === 'Enter') addDebt(); });
+  });
+
+  document.getElementById('newDate').value = todayStr();
+  load();
+</script>
+</body>
+</html>
