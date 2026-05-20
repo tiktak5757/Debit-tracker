@@ -1,0 +1,2033 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Tracker</title>
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+:root{--bg:#0d0d0d;--surface:#1a1a1a;--card:#242424;--border:#383838;--red:#e63946;--red2:#ff6b6b;--text:#ffffff;--muted:#aaaaaa;--green:#2ecc71;--yellow:#f39c12;--blue:#3a86ff;}
+*{box-sizing:border-box;margin:0;padding:0;}
+body{background:var(--bg);color:var(--text);font-family:'DM Sans',sans-serif;font-size:16px;font-weight:500;min-height:100vh;padding-bottom:80px;}
+
+#loginScreen{display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:100vh;padding:30px 20px;}
+.login-title{font-family:'Bebas Neue',sans-serif;font-size:3rem;letter-spacing:6px;color:var(--red);margin-bottom:8px;}
+.login-sub{color:var(--muted);font-size:.75rem;letter-spacing:3px;text-transform:uppercase;margin-bottom:40px;}
+.login-box{background:var(--surface);border:1px solid var(--border);border-radius:16px;padding:28px 24px;width:100%;max-width:360px;}
+.login-label{font-size:.65rem;letter-spacing:2px;text-transform:uppercase;color:var(--muted);margin-bottom:8px;display:block;}
+.login-input{width:100%;background:var(--card);border:1px solid var(--border);color:var(--text);border-radius:10px;padding:14px 16px;font-family:'DM Sans',sans-serif;font-size:1rem;outline:none;margin-bottom:16px;letter-spacing:4px;}
+.login-input:focus{border-color:var(--red);}
+.login-btn{width:100%;background:var(--red);color:white;border:none;border-radius:10px;padding:14px;font-family:'Bebas Neue',sans-serif;font-size:1.1rem;letter-spacing:4px;cursor:pointer;}
+.login-err{color:var(--red2);font-size:.8rem;text-align:center;margin-top:12px;display:none;}
+#appScreen{display:none;}
+
+.sync-bar{background:var(--surface);border-bottom:1px solid var(--border);padding:6px 16px;display:flex;align-items:center;justify-content:space-between;font-size:.68rem;color:var(--muted);letter-spacing:1px;}
+.sync-dot{width:7px;height:7px;border-radius:50%;margin-right:6px;display:inline-block;}
+.sync-dot.live{background:var(--green);animation:pulse 2s infinite;}
+.sync-dot.off{background:var(--red2);}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.4}}
+
+.nav{display:flex;background:var(--surface);border-bottom:1px solid var(--border);position:sticky;top:0;z-index:100;}
+.nav-btn{flex:1;padding:14px 2px;text-align:center;font-family:'Bebas Neue',sans-serif;font-size:.95rem;letter-spacing:1px;color:var(--muted);cursor:pointer;border-bottom:3px solid transparent;transition:all .2s;}
+.nav-btn.ad{color:var(--red);border-bottom-color:var(--red);}
+.nav-btn.af{color:var(--green);border-bottom-color:var(--green);}
+.nav-btn.ar{color:var(--yellow);border-bottom-color:var(--yellow);}
+.nav-btn.at{color:#ff6b6b;border-bottom-color:#ff6b6b;}
+.nav-btn.ay{color:#a78bfa;border-bottom-color:#a78bfa;}
+.nav-btn.ak{color:var(--yellow);border-bottom-color:var(--yellow);}
+.trash-item{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:14px 16px;margin-bottom:10px;display:flex;align-items:center;gap:12px;}
+.trash-info{flex:1;}
+.trash-type{font-size:.65rem;letter-spacing:2px;text-transform:uppercase;color:var(--muted);font-weight:700;margin-bottom:4px;}
+.trash-name{font-weight:800;font-size:1rem;color:#ffffff;}
+.trash-detail{font-size:.82rem;color:var(--muted);margin-top:3px;font-weight:600;}
+.btn-restore{background:rgba(46,204,113,.15);color:var(--green);border:1px solid rgba(46,204,113,.3);border-radius:8px;padding:10px 14px;font-family:'Bebas Neue',sans-serif;font-size:.95rem;letter-spacing:1px;cursor:pointer;white-space:nowrap;font-weight:700;}
+.btn-perm-del{background:rgba(230,57,70,.1);color:var(--red2);border:1px solid rgba(230,57,70,.2);border-radius:8px;padding:10px 12px;font-family:'Bebas Neue',sans-serif;font-size:.95rem;cursor:pointer;font-weight:700;}
+
+.page{display:none;padding:20px 16px;}
+.page.active{display:block;}
+.page-title{font-family:'Bebas Neue',sans-serif;font-size:2.4rem;letter-spacing:4px;line-height:1;margin-bottom:4px;}
+.page-title.red{color:var(--red);}.page-title.grn{color:var(--green);}.page-title.yel{color:var(--yellow);}
+.page-sub{color:var(--muted);font-size:.7rem;letter-spacing:2px;text-transform:uppercase;margin-bottom:20px;}
+
+.sg{display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;margin-bottom:20px;}
+.sc{border-radius:12px;padding:18px 14px;border:1px solid var(--border);background:var(--surface);}
+.sc.ar{background:linear-gradient(135deg,#e63946,#8b0000);border-color:transparent;}
+.sc.ag{background:linear-gradient(135deg,#2ecc71,#1a7a43);border-color:transparent;}
+.sl{font-size:1rem;letter-spacing:1px;text-transform:uppercase;font-weight:800;color:#ffffff;margin-bottom:8px;}
+.sv{font-family:'Bebas Neue',sans-serif;font-size:2.4rem;letter-spacing:1px;line-height:1;font-weight:700;}
+.sv.r{color:#ff6b6b;}.sv.g{color:#2ecc71;}
+
+.ft{display:flex;gap:8px;margin-bottom:16px;}
+.tb{flex:1;padding:9px 4px;border-radius:8px;border:1px solid var(--border);background:var(--surface);color:var(--muted);font-size:.7rem;letter-spacing:1px;text-transform:uppercase;cursor:pointer;text-align:center;transition:all .2s;}
+.tb.ta{background:var(--card);color:var(--text);border-color:#555;}
+.tb.to{background:rgba(230,57,70,.15);color:var(--red2);border-color:var(--red);}
+.tb.tp{background:rgba(46,204,113,.12);color:var(--green);border-color:var(--green);}
+
+.as{background:var(--surface);border-radius:14px;border:1px solid var(--border);padding:16px;margin-bottom:16px;}
+.st{font-size:.6rem;letter-spacing:3px;text-transform:uppercase;color:var(--muted);margin-bottom:12px;}
+.fg{display:grid;gap:8px;margin-bottom:10px;}
+.f2{grid-template-columns:1fr 1fr;}.f3{grid-template-columns:1fr 1fr 1fr;}
+.fg input,.fg select{background:var(--card);border:1px solid var(--border);color:var(--text);border-radius:8px;padding:13px 14px;font-family:'DM Sans',sans-serif;font-size:1rem;font-weight:700;outline:none;transition:border-color .15s;width:100%;appearance:none;}
+.fg input:focus,.fg select:focus{border-color:var(--green);}
+.fg input::placeholder{color:var(--muted);font-weight:500;}
+.fg select option{background:var(--card);font-weight:600;}
+.bp{width:100%;border:none;border-radius:8px;padding:12px;font-family:'Bebas Neue',sans-serif;font-size:1.05rem;letter-spacing:3px;cursor:pointer;transition:background .2s,transform .1s;}
+.bp.r{background:var(--red);color:white;}.bp.r:hover{background:#c1121f;}
+.bp.g{background:#27ae60;color:white;}.bp.g:hover{background:#1e8449;}
+.bp:active{transform:scale(.98);}
+
+/* stock quantity grid */
+.qty-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:10px;}
+.qty-row{display:flex;flex-direction:column;gap:6px;background:var(--card);border-radius:10px;padding:12px;border:1px solid var(--border);}
+.qty-label{font-size:.75rem;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:var(--text);}
+.qty-input{width:100%;background:var(--bg);border:1px solid var(--border);color:var(--text);border-radius:6px;padding:10px 12px;font-family:'DM Sans',sans-serif;font-size:1rem;font-weight:600;outline:none;text-align:center;}
+.qty-input:focus{border-color:var(--green);}
+.section-label{font-size:.62rem;letter-spacing:2px;text-transform:uppercase;color:var(--muted);margin:10px 0 6px;}
+
+/* DEBT CARDS */
+.dc{background:var(--surface);border:1px solid var(--border);border-radius:14px;margin-bottom:10px;overflow:hidden;}
+.dc.fp{border-color:rgba(46,204,113,.3);opacity:.6;}.dc.pt{border-color:rgba(243,156,18,.3);}
+.ch{display:flex;align-items:center;padding:14px 16px;gap:12px;cursor:pointer;}
+.ch:hover{background:rgba(255,255,255,.02);}
+.cn{flex:1;font-weight:700;font-size:1.05rem;}.cn.sk{text-decoration:line-through;color:var(--muted);}
+.cdt{font-size:.8rem;color:var(--muted);font-weight:500;}
+.ca{text-align:right;}
+.cl2{font-family:'Bebas Neue',sans-serif;font-size:1.6rem;letter-spacing:1px;line-height:1;}
+.cl2.ow{color:var(--red2);}.cl2.pa{color:var(--yellow);}.cl2.dn{color:var(--green);}
+.co{font-size:.8rem;color:var(--muted);margin-top:2px;font-weight:500;}
+.cv{color:var(--muted);font-size:.75rem;transition:transform .25s;margin-left:4px;}
+.cv.op{transform:rotate(180deg);}
+.dpn{display:none;border-top:1px solid var(--border);padding:14px;background:var(--card);}
+.dpn.op{display:block;}
+.pw{margin-bottom:12px;}
+.pbl{display:flex;justify-content:space-between;font-size:.7rem;color:var(--muted);margin-bottom:5px;}
+.pb{height:5px;background:var(--border);border-radius:4px;overflow:hidden;}
+.pf{height:100%;border-radius:4px;transition:width .4s;}
+.pf.pn{background:var(--red);width:0%!important;}.pf.pp{background:var(--yellow);}.pf.pd{background:var(--green);}
+.pht{font-size:.6rem;letter-spacing:2px;text-transform:uppercase;color:var(--muted);margin-bottom:8px;}
+.pi{display:flex;justify-content:space-between;align-items:center;padding:7px 10px;background:var(--surface);border-radius:8px;margin-bottom:5px;font-size:.82rem;}
+.pdt{color:var(--muted);font-size:.7rem;}.pam{font-family:'Bebas Neue',sans-serif;font-size:1.05rem;color:var(--green);letter-spacing:1px;}
+.pdl{background:none;border:none;cursor:pointer;color:var(--red);font-size:.82rem;padding:2px 6px;border-radius:4px;}
+.pf2{display:flex;gap:8px;margin-top:10px;}
+.pf2 input{background:var(--surface);border:1px solid var(--border);color:var(--text);border-radius:8px;padding:9px 11px;font-family:'DM Sans',sans-serif;font-size:.83rem;outline:none;flex:1;}
+.pf2 input:focus{border-color:var(--green);}
+.pf2 input::placeholder{color:var(--muted);}
+.bpay{background:rgba(46,204,113,.15);color:var(--green);border:1px solid rgba(46,204,113,.3);border-radius:8px;padding:9px 12px;font-family:'Bebas Neue',sans-serif;font-size:.9rem;letter-spacing:2px;cursor:pointer;white-space:nowrap;}
+.cac{display:flex;gap:8px;margin-top:12px;padding-top:12px;border-top:1px solid var(--border);}
+.bec{flex:1;background:rgba(243,156,18,.1);color:var(--yellow);border:1px solid rgba(243,156,18,.2);border-radius:8px;padding:8px;font-size:.75rem;letter-spacing:1px;text-transform:uppercase;cursor:pointer;}
+.bdc{flex:1;background:rgba(230,57,70,.1);color:var(--red2);border:1px solid rgba(230,57,70,.2);border-radius:8px;padding:8px;font-size:.75rem;letter-spacing:1px;text-transform:uppercase;cursor:pointer;}
+.ef{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:8px;}
+.ef input{background:var(--surface);border:1px solid var(--red);color:var(--text);border-radius:8px;padding:9px 11px;font-family:'DM Sans',sans-serif;font-size:.83rem;outline:none;width:100%;}
+.bse{width:100%;background:rgba(230,57,70,.15);color:var(--red2);border:1px solid rgba(230,57,70,.3);border-radius:8px;padding:8px;font-family:'Bebas Neue',sans-serif;font-size:.9rem;letter-spacing:2px;cursor:pointer;}
+
+/* FRESH CARDS */
+.fc{background:var(--surface);border:1px solid var(--border);border-radius:14px;margin-bottom:10px;overflow:hidden;}
+.fc.fos{border-color:rgba(230,57,70,.5);}.fc.fok{border-color:rgba(46,204,113,.25);}
+.fh{display:flex;align-items:center;padding:14px 16px;gap:10px;cursor:pointer;}
+.fh:hover{background:rgba(255,255,255,.02);}
+.ffl{flex:1;}
+.ffn{font-weight:800;font-size:1.2rem;}
+.ffm{font-size:.9rem;color:var(--muted);margin-top:6px;font-weight:600;display:flex;align-items:center;gap:8px;flex-wrap:wrap;}
+.stock-remaining{font-family:'Bebas Neue',sans-serif;font-size:1.5rem;letter-spacing:1px;color:#ffffff;background:rgba(255,255,255,.1);border:1px solid rgba(255,255,255,.2);border-radius:8px;padding:3px 12px;}
+.tyb{display:inline-block;padding:2px 8px;border-radius:10px;font-size:.6rem;font-weight:600;letter-spacing:1px;text-transform:uppercase;}
+.tfr{background:rgba(230,57,70,.15);color:var(--red2);border:1px solid rgba(230,57,70,.3);}
+.tfg{background:rgba(46,204,113,.15);color:var(--green);border:1px solid rgba(46,204,113,.3);}
+.tst{background:rgba(58,134,255,.15);color:var(--blue);border:1px solid rgba(58,134,255,.3);}
+.ffr{text-align:right;min-width:80px;}
+.ffv{font-family:'Bebas Neue',sans-serif;font-size:1.6rem;letter-spacing:1px;line-height:1.2;}
+.ffv.go{color:var(--green);}.ffv.ro{color:var(--red2);}
+.ffs{font-size:.85rem;color:var(--muted);margin-top:2px;font-weight:700;}
+
+.fp3{display:none;border-top:1px solid var(--border);padding:14px;background:var(--card);}
+.fp3.op{display:block;}
+
+/* stock sizes table */
+.sizes-title{font-size:1rem;letter-spacing:2px;text-transform:uppercase;color:#ffffff;margin-bottom:10px;font-weight:800;}
+.size-row{display:flex;justify-content:space-between;align-items:center;padding:14px 14px;background:var(--surface);border-radius:10px;margin-bottom:6px;font-size:1.1rem;}
+.size-name{color:#ffffff;flex:1;font-weight:800;}
+.size-qty{font-family:'Bebas Neue',sans-serif;font-size:1.5rem;letter-spacing:1px;}
+.size-qty.sq-ok{color:var(--green);}.size-qty.sq-lo{color:var(--yellow);}.size-qty.sq-ou{color:var(--red2);}
+
+.mr{display:flex;justify-content:space-between;align-items:center;padding:12px 0;border-bottom:1px solid var(--border);font-size:1.1rem;}
+.mr:last-of-type{border-bottom:none;}
+.mrl{color:#ffffff;font-weight:800;font-size:1rem;}
+.mrv{font-family:'Bebas Neue',sans-serif;font-size:1.5rem;letter-spacing:1px;}
+.mrv.g{color:var(--green);}.mrv.r{color:var(--red2);}
+
+/* SALE BLOCKS */
+.slt{font-size:.95rem;letter-spacing:2px;text-transform:uppercase;color:#ffffff;margin:16px 0 10px;font-weight:800;}
+.sale-block{background:var(--surface);border-radius:10px;margin-bottom:8px;overflow:hidden;border:1px solid var(--border);}
+.sale-block.sb-owed{border-color:rgba(230,57,70,.3);}.sale-block.sb-part{border-color:rgba(243,156,18,.3);}.sale-block.sb-paid{border-color:rgba(46,204,113,.3);opacity:.7;}.sale-block.sb-booking{border-color:rgba(58,134,255,.5);border-width:2px;}
+.sale-top{display:flex;align-items:center;padding:10px 12px;gap:10px;cursor:pointer;}
+.sale-buyer{flex:1;}
+.sale-buyer-name{font-weight:800;font-size:1.2rem;color:#ffffff;}
+.sale-buyer-sub{font-size:.95rem;color:#aaaaaa;margin-top:4px;font-weight:600;}
+.sale-right{text-align:right;}
+.sale-owed-lbl{font-size:.75rem;color:#aaaaaa;letter-spacing:1px;text-transform:uppercase;font-weight:700;}
+.sale-owed-val{font-family:'Bebas Neue',sans-serif;font-size:1.6rem;letter-spacing:1px;}
+.sale-owed-val.so{color:var(--red2);}.sale-owed-val.sp{color:var(--yellow);}.sale-owed-val.sc2{color:var(--green);}
+.sale-panel{display:none;padding:10px 12px;border-top:1px solid var(--border);background:var(--card);}
+.sale-panel.op{display:block;}
+.mini-prog{margin-bottom:10px;}
+.mini-prog-lbl{display:flex;justify-content:space-between;font-size:.68rem;color:var(--muted);margin-bottom:4px;}
+.mini-bar{height:4px;background:var(--border);border-radius:3px;overflow:hidden;}
+.mini-fill{height:100%;border-radius:3px;transition:width .4s;}
+.mini-fill.mn{background:var(--red);width:0%!important;}.mini-fill.mp{background:var(--yellow);}.mini-fill.md{background:var(--green);}
+.sale-detail-row{display:flex;justify-content:space-between;font-size:.9rem;padding:5px 0;font-weight:600;}
+.sdrl{color:var(--muted);font-weight:600;}.sdrv{font-family:'Bebas Neue',sans-serif;font-size:1.1rem;letter-spacing:1px;}
+.sdrv.g{color:var(--green);}.sdrv.r{color:var(--red2);}
+.pay-hist{margin-top:8px;}
+.pay-hist-title{font-size:.7rem;letter-spacing:2px;text-transform:uppercase;color:var(--muted);margin-bottom:8px;font-weight:700;}
+.pay-row{display:flex;justify-content:space-between;align-items:center;padding:8px 10px;background:var(--surface);border-radius:8px;margin-bottom:5px;font-size:.9rem;font-weight:600;}
+.pay-row-dt{color:var(--muted);font-size:.82rem;font-weight:600;}
+.pay-row-amt{font-family:'Bebas Neue',sans-serif;font-size:1.1rem;color:var(--green);letter-spacing:1px;}
+.pay-row-del{background:none;border:none;cursor:pointer;color:var(--red);font-size:.9rem;padding:2px 6px;border-radius:4px;}
+.add-pay-form{display:flex;gap:8px;margin-top:10px;}
+.add-pay-form input{background:var(--surface);border:1px solid var(--border);color:var(--text);border-radius:8px;padding:11px 12px;font-family:'DM Sans',sans-serif;font-size:1rem;font-weight:600;outline:none;flex:1;}
+.add-pay-form input:focus{border-color:var(--green);}
+.add-pay-form input::placeholder{color:var(--muted);font-size:.95rem;}
+.btn-addpay{background:rgba(46,204,113,.15);color:var(--green);border:1px solid rgba(46,204,113,.3);border-radius:7px;padding:8px 10px;font-family:'Bebas Neue',sans-serif;font-size:.82rem;letter-spacing:1px;cursor:pointer;white-space:nowrap;}
+.sale-actions{display:flex;gap:6px;margin-top:8px;padding-top:8px;border-top:1px solid var(--border);}
+.btn-sdel{flex:1;background:rgba(230,57,70,.1);color:var(--red2);border:1px solid rgba(230,57,70,.2);border-radius:7px;padding:9px;font-size:.8rem;font-weight:700;letter-spacing:1px;text-transform:uppercase;cursor:pointer;}
+.btn-sedit{flex:1;background:rgba(243,156,18,.1);color:var(--yellow);border:1px solid rgba(243,156,18,.2);border-radius:7px;padding:9px;font-size:.8rem;font-weight:700;letter-spacing:1px;text-transform:uppercase;cursor:pointer;}
+
+/* NEW SALE FORM */
+.slf-wrap{background:rgba(46,204,113,.05);border:1px solid rgba(46,204,113,.15);border-radius:10px;padding:14px;margin-top:12px;}
+.slf-title{font-size:.9rem;letter-spacing:3px;text-transform:uppercase;color:var(--green);margin-bottom:12px;font-weight:800;}
+.slf-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:10px;}
+.slf-grid input,.slf-grid select{background:var(--card);border:1px solid var(--border);color:var(--text);border-radius:8px;padding:14px 14px;font-family:'DM Sans',sans-serif;font-size:1rem;font-weight:700;outline:none;width:100%;appearance:none;}
+.slf-grid input:focus,.slf-grid select:focus{border-color:var(--green);}
+.slf-grid input::placeholder{color:var(--muted);font-size:1rem;font-weight:600;}
+.slf-grid select option{background:var(--card);font-size:1rem;font-weight:600;}
+.bsl{width:100%;background:rgba(46,204,113,.2);color:var(--green);border:1px solid rgba(46,204,113,.4);border-radius:8px;padding:14px;font-family:'Bebas Neue',sans-serif;font-size:1.2rem;letter-spacing:2px;cursor:pointer;font-weight:700;}
+
+.fa2{display:flex;gap:8px;margin-top:12px;padding-top:12px;border-top:1px solid var(--border);}
+.bfe{flex:1;background:rgba(243,156,18,.1);color:var(--yellow);border:1px solid rgba(243,156,18,.2);border-radius:8px;padding:8px;font-size:.72rem;letter-spacing:1px;text-transform:uppercase;cursor:pointer;}
+.bfd{flex:1;background:rgba(230,57,70,.1);color:var(--red2);border:1px solid rgba(230,57,70,.2);border-radius:8px;padding:8px;font-size:.72rem;letter-spacing:1px;text-transform:uppercase;cursor:pointer;}
+
+.empty{text-align:center;padding:36px 20px;color:var(--muted);font-size:.82rem;}
+.empty span{display:block;font-size:2rem;margin-bottom:8px;}
+
+/* REPORT */
+.rs{background:var(--surface);border-radius:14px;border:1px solid var(--border);margin-bottom:16px;overflow:hidden;}
+.rst{padding:14px 16px;font-family:'Bebas Neue',sans-serif;font-size:1.1rem;letter-spacing:3px;border-bottom:1px solid var(--border);}
+.rst.rd{color:var(--red2);}.rst.rg{color:var(--green);}
+.rt{width:100%;border-collapse:collapse;}
+.rt th{padding:12px 12px;font-size:.75rem;letter-spacing:2px;text-transform:uppercase;color:var(--text);font-weight:700;text-align:left;background:var(--card);border-bottom:1px solid var(--border);}
+.rt td{padding:13px 12px;font-size:.95rem;border-bottom:1px solid var(--border);font-weight:500;}
+.rt tr:last-child td{border-bottom:none;}
+.tdn{font-weight:600;}
+.tdp{color:var(--green);font-family:'Bebas Neue',sans-serif;font-size:1rem;letter-spacing:1px;}
+.tdo{color:var(--red2);font-family:'Bebas Neue',sans-serif;font-size:1rem;letter-spacing:1px;}
+.tdo.cl{color:var(--green);}
+.ttr td{font-weight:700;background:var(--card);}
+.bpr{width:100%;background:var(--yellow);color:#000;border:none;border-radius:10px;padding:14px;font-family:'Bebas Neue',sans-serif;font-size:1.2rem;letter-spacing:4px;cursor:pointer;margin-bottom:16px;}
+.rpd{color:var(--muted);font-size:.72rem;text-align:center;margin-bottom:18px;letter-spacing:1px;}
+
+@media print{
+  body{background:white!important;color:black!important;padding:0;font-family:Arial,sans-serif;font-size:11px;}
+  .nav,.bpr,.sync-bar,#loginScreen{display:none!important;}
+  .page{display:none!important;}
+  #pageR{display:block!important;padding:16px!important;}
+  .page-title,.page-sub,.ft,.as,.rpd{display:none!important;}
+  .print-header{display:block!important;}
+  .rs{border:1px solid #ccc!important;background:white!important;margin-bottom:12px!important;break-inside:avoid;page-break-inside:avoid;}
+  .rst{background:white!important;color:#000!important;border-bottom:2px solid #000!important;font-size:12px!important;}
+  .rt{border-collapse:collapse!important;width:100%!important;}
+  .rt th{background:white!important;color:#000!important;border-bottom:1px solid #000!important;font-size:9px!important;padding:4px!important;}
+  .rt td{border-bottom:1px solid #ddd!important;color:#000!important;padding:4px!important;font-size:10px!important;}
+  .rt tr{break-inside:avoid;page-break-inside:avoid;}
+  .ttr{break-inside:avoid;page-break-inside:avoid;}
+  .ttr td{background:#f0f0f0!important;color:#000!important;border-top:2px solid #000!important;break-before:avoid;page-break-before:avoid;}
+  .tdp{color:#000!important;font-weight:bold;}.tdo{color:#000!important;}.tdo.cl{color:#000!important;}
+  #rContent>div{break-inside:avoid;page-break-inside:avoid;}
+}
+@media(max-width:500px){
+  .f3{grid-template-columns:1fr 1fr;}.f2{grid-template-columns:1fr;}
+  .sg{grid-template-columns:1fr;}
+  .slf-grid{grid-template-columns:1fr;}
+  .qty-grid{grid-template-columns:1fr;}
+}
+</style>
+</head>
+<body>
+
+<div id="loginScreen">
+  <div class="login-title">TRACKER</div>
+  <div class="login-sub">Enter password to continue</div>
+  <div class="login-box">
+    <label class="login-label">Password</label>
+    <input class="login-input" type="password" id="pwInput" placeholder="••••••••">
+    <button class="login-btn" onclick="doLogin()">ENTER</button>
+    <div class="login-err" id="loginErr">Wrong password. Try again.</div>
+  </div>
+</div>
+
+<div id="appScreen">
+  <div class="sync-bar">
+    <div><span class="sync-dot off" id="syncDot"></span><span id="syncTxt">Connecting...</span></div>
+    <div id="syncTime"></div>
+  </div>
+  <div class="nav">
+    <div class="nav-btn ad" id="navD" onclick="goPage('D')">💳 Debt</div>
+    <div class="nav-btn"   id="navF" onclick="goPage('F')">🥬 Fresh</div>
+    <div class="nav-btn"   id="navR" onclick="goPage('R')">🖨 Report</div>
+    <div class="nav-btn"   id="navA" onclick="goPage('A')">📂 Archive</div>
+    <div class="nav-btn"   id="navK" onclick="goPage('K')">📦 Track</div>
+    <div class="nav-btn"   id="navT" onclick="goPage('T')">🗑 Trash</div>
+  </div>
+
+  <!-- DEBT -->
+  <div class="page active" id="pageD">
+    <div class="page-title red">Debt Tracker</div>
+    <div class="page-sub">Live shared with Mo</div>
+    <div class="sg">
+      <div class="sc ar"><div class="sl">Total Debt</div><div class="sv" id="dT">£0.00</div></div>
+      <div class="sc"><div class="sl">Still Owed</div><div class="sv r" id="dO">£0.00</div></div>
+      <div class="sc"><div class="sl">Collected</div><div class="sv g" id="dC">£0.00</div></div>
+    </div>
+    <div class="ft">
+      <div class="tb ta" id="dTA" onclick="dFil('all')">All</div>
+      <div class="tb"   id="dTU" onclick="dFil('un')">Unpaid</div>
+      <div class="tb"   id="dTP" onclick="dFil('pd')">Paid</div>
+    </div>
+    <div class="as">
+      <div class="st">Add New Debt</div>
+      <div class="fg f3">
+        <input type="date" id="dND">
+        <input type="text" id="dNN" placeholder="Name">
+        <input type="number" id="dNA" placeholder="£ Total Owed" step="0.01" min="0">
+      </div>
+      <button class="bp r" onclick="dAdd()">+ ADD DEBT</button>
+    </div>
+    <div id="dList"></div>
+  </div>
+
+  <!-- FRESH -->
+  <div class="page" id="pageF">
+    <div class="page-title grn">Fresh</div>
+    <div class="page-sub">Live shared with Mo</div>
+    <div class="sg">
+      <div class="sc ag"><div class="sl">Money Owed</div><div class="sv r" id="fTO2">£0.00</div></div>
+      <div class="sc"><div class="sl">Collected</div><div class="sv g" id="fTC2">£0.00</div></div>
+      <div class="sc"><div class="sl">Sales</div><div class="sv" style="color:#ffffff;" id="fTS2">0</div></div>
+    </div>
+
+    <!-- COST PRICE + PROFIT (PIN PROTECTED) -->
+    <div class="as" style="border-color:rgba(243,156,18,.4);" id="profitLockArea">
+      <div id="profitLocked" style="text-align:center;padding:12px 0;">
+        <div style="font-family:'Bebas Neue',sans-serif;font-size:1.1rem;letter-spacing:3px;color:var(--muted);margin-bottom:10px;">🔒 PROFIT & COST</div>
+        <input id="profitPin" type="password" placeholder="PIN" maxlength="20" style="background:var(--card);border:2px solid rgba(243,156,18,.4);color:var(--text);border-radius:8px;padding:12px;font-size:1.1rem;font-weight:700;outline:none;width:120px;text-align:center;letter-spacing:4px;" onkeydown="if(event.key==='Enter')unlockProfit()">
+        <button onclick="unlockProfit()" style="margin-left:8px;background:rgba(243,156,18,.2);color:var(--yellow);border:2px solid rgba(243,156,18,.4);border-radius:8px;padding:12px 18px;font-family:'Bebas Neue',sans-serif;font-size:1rem;letter-spacing:2px;cursor:pointer;">GO</button>
+      </div>
+      <div id="profitUnlocked" style="display:none;">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;">
+          <div>
+            <div style="font-family:'Bebas Neue',sans-serif;font-size:1rem;letter-spacing:2px;color:var(--green);">💰 PROFIT</div>
+            <div id="fProfitDisplay" style="font-family:'Bebas Neue',sans-serif;font-size:2.2rem;letter-spacing:1px;line-height:1;">£0.00</div>
+            <div style="font-size:.75rem;color:var(--muted);font-weight:700;">Collected − Cost</div>
+          </div>
+          <div style="text-align:right;">
+            <div style="font-family:'Bebas Neue',sans-serif;font-size:1rem;letter-spacing:2px;color:var(--yellow);">COST PRICE</div>
+            <div style="display:flex;align-items:center;gap:8px;margin-top:6px;">
+              <input type="number" id="fCostPrice" placeholder="£ 0.00" step="0.01" min="0" style="background:var(--card);border:1px solid rgba(243,156,18,.4);color:var(--text);border-radius:8px;padding:10px 12px;font-family:'DM Sans',sans-serif;font-size:1rem;font-weight:700;outline:none;width:130px;text-align:center;">
+              <button onclick="fSaveCost()" style="background:rgba(243,156,18,.2);color:var(--yellow);border:1px solid rgba(243,156,18,.4);border-radius:8px;padding:10px 14px;font-family:'Bebas Neue',sans-serif;font-size:1rem;letter-spacing:1px;cursor:pointer;font-weight:700;">SAVE</button>
+            </div>
+            <div id="fCostDisplay" style="font-size:.78rem;color:var(--muted);margin-top:5px;font-weight:700;text-align:right;"></div>
+            <button onclick="lockProfit()" style="margin-top:10px;background:rgba(230,57,70,.1);color:var(--red2);border:1px solid rgba(230,57,70,.3);border-radius:8px;padding:6px 12px;font-family:'Bebas Neue',sans-serif;font-size:.85rem;letter-spacing:1px;cursor:pointer;">🔒 LOCK</button>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="ft">
+      <div class="tb ta" id="fTA" onclick="fFil('all')">All</div>
+      <div class="tb"   id="fTO" onclick="fFil('ow')">Has Balance</div>
+      <div class="tb"   id="fTC" onclick="fFil('cl')">Cleared</div>
+    </div>
+
+    <!-- ADD STOCK FORM -->
+    <div class="as">
+      <div class="st">Add / Update Stock</div>
+      <div class="fg f3">
+        <input type="date" id="fND">
+        <input type="text" id="fNName" placeholder="Supplier / Stock Name">
+        <select id="fNType" onchange="renderStockForm()">
+          <option value="" disabled selected>Select Type</option>
+          <option value="Fahra Red">Fahra Red</option>
+          <option value="Fahra Green">Fahra Green</option>
+          <option value="Sticks">Sticks</option>
+        </select>
+      </div>
+      <div id="stockFormBody"></div>
+      <button class="bp g" onclick="fAdd()">+ ADD STOCK</button>
+    </div>
+
+    <div id="fList"></div>
+  </div>
+
+  <!-- REPORT -->
+  <div class="page" id="pageR">
+    <div class="page-title yel">Report</div>
+    <div class="page-sub">All names · paid · owed · ready to print</div>
+    <div style="display:flex;gap:8px;margin-bottom:12px;align-items:center;">
+      <button onclick="buildReport()" style="flex:1;background:rgba(46,204,113,.2);color:var(--green);border:1px solid rgba(46,204,113,.3);border-radius:8px;padding:12px 16px;font-family:'Bebas Neue',sans-serif;font-size:1rem;letter-spacing:1px;cursor:pointer;font-weight:700;">🔄 REFRESH</button>
+      <button onclick="lockReport()" style="background:rgba(230,57,70,.1);color:var(--red2);border:1px solid rgba(230,57,70,.3);border-radius:8px;padding:12px 16px;font-family:'Bebas Neue',sans-serif;font-size:1rem;letter-spacing:1px;cursor:pointer;font-weight:700;">🔒 LOCK</button>
+    </div>
+    <!-- STOCK DATE -->
+    <div style="background:var(--surface);border:2px solid rgba(58,134,255,.4);border-radius:12px;padding:16px;margin-bottom:14px;">
+      <div style="font-size:.85rem;letter-spacing:2px;text-transform:uppercase;color:#3a86ff;margin-bottom:12px;font-weight:800;">📝 Fill in before printing</div>
+      <div style="margin-bottom:10px;">
+        <div style="font-size:.75rem;color:var(--muted);font-weight:700;margin-bottom:6px;letter-spacing:1px;">SELLER NAME</div>
+        <input type="text" id="rStockLabel" placeholder="e.g. Waleed" oninput="saveReportMeta()" style="background:var(--card);border:2px solid var(--border);color:var(--text);border-radius:8px;padding:16px;font-family:'DM Sans',sans-serif;font-size:1.1rem;font-weight:700;outline:none;width:100%;box-sizing:border-box;">
+      </div>
+      <div style="margin-bottom:10px;">
+        <div style="font-size:.75rem;color:var(--muted);font-weight:700;margin-bottom:6px;letter-spacing:1px;">DATE (type it yourself)</div>
+        <input type="text" id="rManualDate" placeholder="e.g. 13th May 2026" oninput="saveReportMeta()" style="background:var(--card);border:2px solid var(--border);color:var(--text);border-radius:8px;padding:16px;font-family:'DM Sans',sans-serif;font-size:1.1rem;font-weight:700;outline:none;width:100%;box-sizing:border-box;">
+      </div>
+      <div>
+        <div style="font-size:.75rem;color:var(--muted);font-weight:700;margin-bottom:6px;letter-spacing:1px;">STOCK DATE (optional)</div>
+        <input type="date" id="rStockDate" oninput="saveReportMeta()" style="background:var(--card);border:2px solid var(--border);color:var(--text);border-radius:8px;padding:16px;font-family:'DM Sans',sans-serif;font-size:1.1rem;font-weight:700;outline:none;width:100%;box-sizing:border-box;">
+      </div>
+    </div>
+    <!-- TRACKING NUMBERS -->
+    <div style="background:var(--surface);border:2px solid rgba(243,156,18,.4);border-radius:12px;padding:16px;margin-bottom:14px;">
+      <div style="font-size:.85rem;letter-spacing:2px;text-transform:uppercase;color:var(--yellow);margin-bottom:12px;font-weight:800;">📦 Tracking Numbers</div>
+      <div id="trackingRows">
+        <div style="display:grid;grid-template-columns:2fr 1.5fr 1.5fr 1fr 1fr 1fr auto auto auto;gap:6px;margin-bottom:6px;padding:2px;"><div style="font-size:.65rem;font-weight:900;letter-spacing:1px;color:var(--muted);text-transform:uppercase;">Tracking No.</div><div style="font-size:.65rem;font-weight:900;letter-spacing:1px;color:var(--muted);text-transform:uppercase;">Date</div><div style="font-size:.65rem;font-weight:900;letter-spacing:1px;color:var(--muted);text-transform:uppercase;">Seller</div><div style="font-size:.65rem;font-weight:900;letter-spacing:1px;color:var(--muted);text-transform:uppercase;text-align:center;">Qty Sent</div><div style="font-size:.65rem;font-weight:900;letter-spacing:1px;color:var(--muted);text-transform:uppercase;text-align:center;">Qty Recv</div><div style="font-size:.65rem;font-weight:900;letter-spacing:1px;color:var(--muted);text-transform:uppercase;text-align:center;">Qty Lost</div><div style="font-size:.65rem;font-weight:900;letter-spacing:1px;color:var(--muted);text-transform:uppercase;text-align:center;">✓</div><div style="font-size:.65rem;font-weight:900;letter-spacing:1px;color:var(--muted);text-transform:uppercase;text-align:center;">✗</div><div style="font-size:.65rem;font-weight:900;letter-spacing:1px;color:var(--muted);text-transform:uppercase;text-align:center;">📦</div></div>
+        <div class="tr-row" style="display:grid;grid-template-columns:2fr 1.5fr 1.5fr 1fr 1fr 1fr auto auto auto;gap:6px;margin-bottom:8px;align-items:center;border-radius:8px;padding:2px;"><input type="text" class="tr-inp" placeholder="Tracking #1" data-row="0" style="background:var(--card);border:2px solid var(--border);color:#ffffff;border-radius:8px;padding:10px;font-family:'DM Sans',sans-serif;font-size:.9rem;font-weight:800;outline:none;width:100%;box-sizing:border-box;" oninput="calcDiff(this);autoSaveTracking()"><input type="date" class="tr-date" style="background:var(--card);border:2px solid var(--border);color:#ffffff;border-radius:8px;padding:10px;font-family:'DM Sans',sans-serif;font-size:.8rem;font-weight:800;outline:none;width:100%;box-sizing:border-box;" oninput="autoSaveTracking()"><input type="text" class="tr-seller" placeholder="Seller" style="background:var(--card);border:2px solid var(--border);color:#ffffff;border-radius:8px;padding:10px;font-family:'DM Sans',sans-serif;font-size:.8rem;font-weight:800;outline:none;width:100%;box-sizing:border-box;" oninput="autoSaveTracking()"><input type="number" class="tr-sent" placeholder="Sent" style="background:var(--card);border:2px solid var(--border);color:#ffffff;border-radius:8px;padding:10px;font-family:'DM Sans',sans-serif;font-size:.9rem;font-weight:800;outline:none;width:100%;box-sizing:border-box;text-align:center;" min="0" oninput="calcDiff(this);autoSaveTracking()"><input type="number" class="tr-recv" placeholder="Recv" style="background:var(--card);border:2px solid var(--border);color:#ffffff;border-radius:8px;padding:10px;font-family:'DM Sans',sans-serif;font-size:.9rem;font-weight:800;outline:none;width:100%;box-sizing:border-box;text-align:center;" min="0" oninput="calcDiff(this);autoSaveTracking()"><div class="tr-diff" style="background:var(--card);border:2px solid var(--border);border-radius:8px;padding:10px;font-family:'Bebas Neue',sans-serif;font-size:1rem;font-weight:800;text-align:center;color:var(--muted);letter-spacing:1px;">—</div><button class="tr-tick" onclick="trTick(this)" style="background:var(--card);border:2px solid var(--border);border-radius:8px;padding:8px 10px;font-size:1.1rem;cursor:pointer;min-width:42px;" data-active="0"></button><button class="tr-x" onclick="trX(this)" style="background:var(--card);border:2px solid var(--border);border-radius:8px;padding:8px 10px;font-size:1.1rem;cursor:pointer;min-width:42px;" data-active="0"></button><button onclick="moveRowToTracking(0)" style="background:rgba(243,156,18,.15);color:var(--yellow);border:1px solid rgba(243,156,18,.3);border-radius:8px;padding:8px 10px;font-size:.85rem;cursor:pointer;min-width:42px;font-weight:800;" title="Move to Tracking folder">📦</button></div>
+        <div class="tr-row" style="display:grid;grid-template-columns:2fr 1.5fr 1.5fr 1fr 1fr 1fr auto auto auto;gap:6px;margin-bottom:8px;align-items:center;border-radius:8px;padding:2px;"><input type="text" class="tr-inp" placeholder="Tracking #2" data-row="1" style="background:var(--card);border:2px solid var(--border);color:#ffffff;border-radius:8px;padding:10px;font-family:'DM Sans',sans-serif;font-size:.9rem;font-weight:800;outline:none;width:100%;box-sizing:border-box;" oninput="calcDiff(this);autoSaveTracking()"><input type="date" class="tr-date" style="background:var(--card);border:2px solid var(--border);color:#ffffff;border-radius:8px;padding:10px;font-family:'DM Sans',sans-serif;font-size:.8rem;font-weight:800;outline:none;width:100%;box-sizing:border-box;" oninput="autoSaveTracking()"><input type="text" class="tr-seller" placeholder="Seller" style="background:var(--card);border:2px solid var(--border);color:#ffffff;border-radius:8px;padding:10px;font-family:'DM Sans',sans-serif;font-size:.8rem;font-weight:800;outline:none;width:100%;box-sizing:border-box;" oninput="autoSaveTracking()"><input type="number" class="tr-sent" placeholder="Sent" style="background:var(--card);border:2px solid var(--border);color:#ffffff;border-radius:8px;padding:10px;font-family:'DM Sans',sans-serif;font-size:.9rem;font-weight:800;outline:none;width:100%;box-sizing:border-box;text-align:center;" min="0" oninput="calcDiff(this);autoSaveTracking()"><input type="number" class="tr-recv" placeholder="Recv" style="background:var(--card);border:2px solid var(--border);color:#ffffff;border-radius:8px;padding:10px;font-family:'DM Sans',sans-serif;font-size:.9rem;font-weight:800;outline:none;width:100%;box-sizing:border-box;text-align:center;" min="0" oninput="calcDiff(this);autoSaveTracking()"><div class="tr-diff" style="background:var(--card);border:2px solid var(--border);border-radius:8px;padding:10px;font-family:'Bebas Neue',sans-serif;font-size:1rem;font-weight:800;text-align:center;color:var(--muted);letter-spacing:1px;">—</div><button class="tr-tick" onclick="trTick(this)" style="background:var(--card);border:2px solid var(--border);border-radius:8px;padding:8px 10px;font-size:1.1rem;cursor:pointer;min-width:42px;" data-active="0"></button><button class="tr-x" onclick="trX(this)" style="background:var(--card);border:2px solid var(--border);border-radius:8px;padding:8px 10px;font-size:1.1rem;cursor:pointer;min-width:42px;" data-active="0"></button><button onclick="moveRowToTracking(1)" style="background:rgba(243,156,18,.15);color:var(--yellow);border:1px solid rgba(243,156,18,.3);border-radius:8px;padding:8px 10px;font-size:.85rem;cursor:pointer;min-width:42px;font-weight:800;" title="Move to Tracking folder">📦</button></div>
+        <div class="tr-row" style="display:grid;grid-template-columns:2fr 1.5fr 1.5fr 1fr 1fr 1fr auto auto auto;gap:6px;margin-bottom:8px;align-items:center;border-radius:8px;padding:2px;"><input type="text" class="tr-inp" placeholder="Tracking #3" data-row="2" style="background:var(--card);border:2px solid var(--border);color:#ffffff;border-radius:8px;padding:10px;font-family:'DM Sans',sans-serif;font-size:.9rem;font-weight:800;outline:none;width:100%;box-sizing:border-box;" oninput="calcDiff(this);autoSaveTracking()"><input type="date" class="tr-date" style="background:var(--card);border:2px solid var(--border);color:#ffffff;border-radius:8px;padding:10px;font-family:'DM Sans',sans-serif;font-size:.8rem;font-weight:800;outline:none;width:100%;box-sizing:border-box;" oninput="autoSaveTracking()"><input type="text" class="tr-seller" placeholder="Seller" style="background:var(--card);border:2px solid var(--border);color:#ffffff;border-radius:8px;padding:10px;font-family:'DM Sans',sans-serif;font-size:.8rem;font-weight:800;outline:none;width:100%;box-sizing:border-box;" oninput="autoSaveTracking()"><input type="number" class="tr-sent" placeholder="Sent" style="background:var(--card);border:2px solid var(--border);color:#ffffff;border-radius:8px;padding:10px;font-family:'DM Sans',sans-serif;font-size:.9rem;font-weight:800;outline:none;width:100%;box-sizing:border-box;text-align:center;" min="0" oninput="calcDiff(this);autoSaveTracking()"><input type="number" class="tr-recv" placeholder="Recv" style="background:var(--card);border:2px solid var(--border);color:#ffffff;border-radius:8px;padding:10px;font-family:'DM Sans',sans-serif;font-size:.9rem;font-weight:800;outline:none;width:100%;box-sizing:border-box;text-align:center;" min="0" oninput="calcDiff(this);autoSaveTracking()"><div class="tr-diff" style="background:var(--card);border:2px solid var(--border);border-radius:8px;padding:10px;font-family:'Bebas Neue',sans-serif;font-size:1rem;font-weight:800;text-align:center;color:var(--muted);letter-spacing:1px;">—</div><button class="tr-tick" onclick="trTick(this)" style="background:var(--card);border:2px solid var(--border);border-radius:8px;padding:8px 10px;font-size:1.1rem;cursor:pointer;min-width:42px;" data-active="0"></button><button class="tr-x" onclick="trX(this)" style="background:var(--card);border:2px solid var(--border);border-radius:8px;padding:8px 10px;font-size:1.1rem;cursor:pointer;min-width:42px;" data-active="0"></button><button onclick="moveRowToTracking(2)" style="background:rgba(243,156,18,.15);color:var(--yellow);border:1px solid rgba(243,156,18,.3);border-radius:8px;padding:8px 10px;font-size:.85rem;cursor:pointer;min-width:42px;font-weight:800;" title="Move to Tracking folder">📦</button></div>
+        <div class="tr-row" style="display:grid;grid-template-columns:2fr 1.5fr 1.5fr 1fr 1fr 1fr auto auto auto;gap:6px;margin-bottom:8px;align-items:center;border-radius:8px;padding:2px;"><input type="text" class="tr-inp" placeholder="Tracking #4" data-row="3" style="background:var(--card);border:2px solid var(--border);color:#ffffff;border-radius:8px;padding:10px;font-family:'DM Sans',sans-serif;font-size:.9rem;font-weight:800;outline:none;width:100%;box-sizing:border-box;" oninput="calcDiff(this);autoSaveTracking()"><input type="date" class="tr-date" style="background:var(--card);border:2px solid var(--border);color:#ffffff;border-radius:8px;padding:10px;font-family:'DM Sans',sans-serif;font-size:.8rem;font-weight:800;outline:none;width:100%;box-sizing:border-box;" oninput="autoSaveTracking()"><input type="text" class="tr-seller" placeholder="Seller" style="background:var(--card);border:2px solid var(--border);color:#ffffff;border-radius:8px;padding:10px;font-family:'DM Sans',sans-serif;font-size:.8rem;font-weight:800;outline:none;width:100%;box-sizing:border-box;" oninput="autoSaveTracking()"><input type="number" class="tr-sent" placeholder="Sent" style="background:var(--card);border:2px solid var(--border);color:#ffffff;border-radius:8px;padding:10px;font-family:'DM Sans',sans-serif;font-size:.9rem;font-weight:800;outline:none;width:100%;box-sizing:border-box;text-align:center;" min="0" oninput="calcDiff(this);autoSaveTracking()"><input type="number" class="tr-recv" placeholder="Recv" style="background:var(--card);border:2px solid var(--border);color:#ffffff;border-radius:8px;padding:10px;font-family:'DM Sans',sans-serif;font-size:.9rem;font-weight:800;outline:none;width:100%;box-sizing:border-box;text-align:center;" min="0" oninput="calcDiff(this);autoSaveTracking()"><div class="tr-diff" style="background:var(--card);border:2px solid var(--border);border-radius:8px;padding:10px;font-family:'Bebas Neue',sans-serif;font-size:1rem;font-weight:800;text-align:center;color:var(--muted);letter-spacing:1px;">—</div><button class="tr-tick" onclick="trTick(this)" style="background:var(--card);border:2px solid var(--border);border-radius:8px;padding:8px 10px;font-size:1.1rem;cursor:pointer;min-width:42px;" data-active="0"></button><button class="tr-x" onclick="trX(this)" style="background:var(--card);border:2px solid var(--border);border-radius:8px;padding:8px 10px;font-size:1.1rem;cursor:pointer;min-width:42px;" data-active="0"></button><button onclick="moveRowToTracking(3)" style="background:rgba(243,156,18,.15);color:var(--yellow);border:1px solid rgba(243,156,18,.3);border-radius:8px;padding:8px 10px;font-size:.85rem;cursor:pointer;min-width:42px;font-weight:800;" title="Move to Tracking folder">📦</button></div>
+        <div class="tr-row" style="display:grid;grid-template-columns:2fr 1.5fr 1.5fr 1fr 1fr 1fr auto auto auto;gap:6px;margin-bottom:8px;align-items:center;border-radius:8px;padding:2px;"><input type="text" class="tr-inp" placeholder="Tracking #5" data-row="4" style="background:var(--card);border:2px solid var(--border);color:#ffffff;border-radius:8px;padding:10px;font-family:'DM Sans',sans-serif;font-size:.9rem;font-weight:800;outline:none;width:100%;box-sizing:border-box;" oninput="calcDiff(this);autoSaveTracking()"><input type="date" class="tr-date" style="background:var(--card);border:2px solid var(--border);color:#ffffff;border-radius:8px;padding:10px;font-family:'DM Sans',sans-serif;font-size:.8rem;font-weight:800;outline:none;width:100%;box-sizing:border-box;" oninput="autoSaveTracking()"><input type="text" class="tr-seller" placeholder="Seller" style="background:var(--card);border:2px solid var(--border);color:#ffffff;border-radius:8px;padding:10px;font-family:'DM Sans',sans-serif;font-size:.8rem;font-weight:800;outline:none;width:100%;box-sizing:border-box;" oninput="autoSaveTracking()"><input type="number" class="tr-sent" placeholder="Sent" style="background:var(--card);border:2px solid var(--border);color:#ffffff;border-radius:8px;padding:10px;font-family:'DM Sans',sans-serif;font-size:.9rem;font-weight:800;outline:none;width:100%;box-sizing:border-box;text-align:center;" min="0" oninput="calcDiff(this);autoSaveTracking()"><input type="number" class="tr-recv" placeholder="Recv" style="background:var(--card);border:2px solid var(--border);color:#ffffff;border-radius:8px;padding:10px;font-family:'DM Sans',sans-serif;font-size:.9rem;font-weight:800;outline:none;width:100%;box-sizing:border-box;text-align:center;" min="0" oninput="calcDiff(this);autoSaveTracking()"><div class="tr-diff" style="background:var(--card);border:2px solid var(--border);border-radius:8px;padding:10px;font-family:'Bebas Neue',sans-serif;font-size:1rem;font-weight:800;text-align:center;color:var(--muted);letter-spacing:1px;">—</div><button class="tr-tick" onclick="trTick(this)" style="background:var(--card);border:2px solid var(--border);border-radius:8px;padding:8px 10px;font-size:1.1rem;cursor:pointer;min-width:42px;" data-active="0"></button><button class="tr-x" onclick="trX(this)" style="background:var(--card);border:2px solid var(--border);border-radius:8px;padding:8px 10px;font-size:1.1rem;cursor:pointer;min-width:42px;" data-active="0"></button><button onclick="moveRowToTracking(4)" style="background:rgba(243,156,18,.15);color:var(--yellow);border:1px solid rgba(243,156,18,.3);border-radius:8px;padding:8px 10px;font-size:.85rem;cursor:pointer;min-width:42px;font-weight:800;" title="Move to Tracking folder">📦</button></div>
+        <div class="tr-row" style="display:grid;grid-template-columns:2fr 1.5fr 1.5fr 1fr 1fr 1fr auto auto auto;gap:6px;margin-bottom:8px;align-items:center;border-radius:8px;padding:2px;"><input type="text" class="tr-inp" placeholder="Tracking #6" data-row="5" style="background:var(--card);border:2px solid var(--border);color:#ffffff;border-radius:8px;padding:10px;font-family:'DM Sans',sans-serif;font-size:.9rem;font-weight:800;outline:none;width:100%;box-sizing:border-box;" oninput="calcDiff(this);autoSaveTracking()"><input type="date" class="tr-date" style="background:var(--card);border:2px solid var(--border);color:#ffffff;border-radius:8px;padding:10px;font-family:'DM Sans',sans-serif;font-size:.8rem;font-weight:800;outline:none;width:100%;box-sizing:border-box;" oninput="autoSaveTracking()"><input type="text" class="tr-seller" placeholder="Seller" style="background:var(--card);border:2px solid var(--border);color:#ffffff;border-radius:8px;padding:10px;font-family:'DM Sans',sans-serif;font-size:.8rem;font-weight:800;outline:none;width:100%;box-sizing:border-box;" oninput="autoSaveTracking()"><input type="number" class="tr-sent" placeholder="Sent" style="background:var(--card);border:2px solid var(--border);color:#ffffff;border-radius:8px;padding:10px;font-family:'DM Sans',sans-serif;font-size:.9rem;font-weight:800;outline:none;width:100%;box-sizing:border-box;text-align:center;" min="0" oninput="calcDiff(this);autoSaveTracking()"><input type="number" class="tr-recv" placeholder="Recv" style="background:var(--card);border:2px solid var(--border);color:#ffffff;border-radius:8px;padding:10px;font-family:'DM Sans',sans-serif;font-size:.9rem;font-weight:800;outline:none;width:100%;box-sizing:border-box;text-align:center;" min="0" oninput="calcDiff(this);autoSaveTracking()"><div class="tr-diff" style="background:var(--card);border:2px solid var(--border);border-radius:8px;padding:10px;font-family:'Bebas Neue',sans-serif;font-size:1rem;font-weight:800;text-align:center;color:var(--muted);letter-spacing:1px;">—</div><button class="tr-tick" onclick="trTick(this)" style="background:var(--card);border:2px solid var(--border);border-radius:8px;padding:8px 10px;font-size:1.1rem;cursor:pointer;min-width:42px;" data-active="0"></button><button class="tr-x" onclick="trX(this)" style="background:var(--card);border:2px solid var(--border);border-radius:8px;padding:8px 10px;font-size:1.1rem;cursor:pointer;min-width:42px;" data-active="0"></button><button onclick="moveRowToTracking(5)" style="background:rgba(243,156,18,.15);color:var(--yellow);border:1px solid rgba(243,156,18,.3);border-radius:8px;padding:8px 10px;font-size:.85rem;cursor:pointer;min-width:42px;font-weight:800;" title="Move to Tracking folder">📦</button></div>
+        <div class="tr-row" style="display:grid;grid-template-columns:2fr 1.5fr 1.5fr 1fr 1fr 1fr auto auto auto;gap:6px;margin-bottom:8px;align-items:center;border-radius:8px;padding:2px;"><input type="text" class="tr-inp" placeholder="Tracking #7" data-row="6" style="background:var(--card);border:2px solid var(--border);color:#ffffff;border-radius:8px;padding:10px;font-family:'DM Sans',sans-serif;font-size:.9rem;font-weight:800;outline:none;width:100%;box-sizing:border-box;" oninput="calcDiff(this);autoSaveTracking()"><input type="date" class="tr-date" style="background:var(--card);border:2px solid var(--border);color:#ffffff;border-radius:8px;padding:10px;font-family:'DM Sans',sans-serif;font-size:.8rem;font-weight:800;outline:none;width:100%;box-sizing:border-box;" oninput="autoSaveTracking()"><input type="text" class="tr-seller" placeholder="Seller" style="background:var(--card);border:2px solid var(--border);color:#ffffff;border-radius:8px;padding:10px;font-family:'DM Sans',sans-serif;font-size:.8rem;font-weight:800;outline:none;width:100%;box-sizing:border-box;" oninput="autoSaveTracking()"><input type="number" class="tr-sent" placeholder="Sent" style="background:var(--card);border:2px solid var(--border);color:#ffffff;border-radius:8px;padding:10px;font-family:'DM Sans',sans-serif;font-size:.9rem;font-weight:800;outline:none;width:100%;box-sizing:border-box;text-align:center;" min="0" oninput="calcDiff(this);autoSaveTracking()"><input type="number" class="tr-recv" placeholder="Recv" style="background:var(--card);border:2px solid var(--border);color:#ffffff;border-radius:8px;padding:10px;font-family:'DM Sans',sans-serif;font-size:.9rem;font-weight:800;outline:none;width:100%;box-sizing:border-box;text-align:center;" min="0" oninput="calcDiff(this);autoSaveTracking()"><div class="tr-diff" style="background:var(--card);border:2px solid var(--border);border-radius:8px;padding:10px;font-family:'Bebas Neue',sans-serif;font-size:1rem;font-weight:800;text-align:center;color:var(--muted);letter-spacing:1px;">—</div><button class="tr-tick" onclick="trTick(this)" style="background:var(--card);border:2px solid var(--border);border-radius:8px;padding:8px 10px;font-size:1.1rem;cursor:pointer;min-width:42px;" data-active="0"></button><button class="tr-x" onclick="trX(this)" style="background:var(--card);border:2px solid var(--border);border-radius:8px;padding:8px 10px;font-size:1.1rem;cursor:pointer;min-width:42px;" data-active="0"></button><button onclick="moveRowToTracking(6)" style="background:rgba(243,156,18,.15);color:var(--yellow);border:1px solid rgba(243,156,18,.3);border-radius:8px;padding:8px 10px;font-size:.85rem;cursor:pointer;min-width:42px;font-weight:800;" title="Move to Tracking folder">📦</button></div>
+        <div class="tr-row" style="display:grid;grid-template-columns:2fr 1.5fr 1.5fr 1fr 1fr 1fr auto auto auto;gap:6px;margin-bottom:8px;align-items:center;border-radius:8px;padding:2px;"><input type="text" class="tr-inp" placeholder="Tracking #8" data-row="7" style="background:var(--card);border:2px solid var(--border);color:#ffffff;border-radius:8px;padding:10px;font-family:'DM Sans',sans-serif;font-size:.9rem;font-weight:800;outline:none;width:100%;box-sizing:border-box;" oninput="calcDiff(this);autoSaveTracking()"><input type="date" class="tr-date" style="background:var(--card);border:2px solid var(--border);color:#ffffff;border-radius:8px;padding:10px;font-family:'DM Sans',sans-serif;font-size:.8rem;font-weight:800;outline:none;width:100%;box-sizing:border-box;" oninput="autoSaveTracking()"><input type="text" class="tr-seller" placeholder="Seller" style="background:var(--card);border:2px solid var(--border);color:#ffffff;border-radius:8px;padding:10px;font-family:'DM Sans',sans-serif;font-size:.8rem;font-weight:800;outline:none;width:100%;box-sizing:border-box;" oninput="autoSaveTracking()"><input type="number" class="tr-sent" placeholder="Sent" style="background:var(--card);border:2px solid var(--border);color:#ffffff;border-radius:8px;padding:10px;font-family:'DM Sans',sans-serif;font-size:.9rem;font-weight:800;outline:none;width:100%;box-sizing:border-box;text-align:center;" min="0" oninput="calcDiff(this);autoSaveTracking()"><input type="number" class="tr-recv" placeholder="Recv" style="background:var(--card);border:2px solid var(--border);color:#ffffff;border-radius:8px;padding:10px;font-family:'DM Sans',sans-serif;font-size:.9rem;font-weight:800;outline:none;width:100%;box-sizing:border-box;text-align:center;" min="0" oninput="calcDiff(this);autoSaveTracking()"><div class="tr-diff" style="background:var(--card);border:2px solid var(--border);border-radius:8px;padding:10px;font-family:'Bebas Neue',sans-serif;font-size:1rem;font-weight:800;text-align:center;color:var(--muted);letter-spacing:1px;">—</div><button class="tr-tick" onclick="trTick(this)" style="background:var(--card);border:2px solid var(--border);border-radius:8px;padding:8px 10px;font-size:1.1rem;cursor:pointer;min-width:42px;" data-active="0"></button><button class="tr-x" onclick="trX(this)" style="background:var(--card);border:2px solid var(--border);border-radius:8px;padding:8px 10px;font-size:1.1rem;cursor:pointer;min-width:42px;" data-active="0"></button><button onclick="moveRowToTracking(7)" style="background:rgba(243,156,18,.15);color:var(--yellow);border:1px solid rgba(243,156,18,.3);border-radius:8px;padding:8px 10px;font-size:.85rem;cursor:pointer;min-width:42px;font-weight:800;" title="Move to Tracking folder">📦</button></div>
+        <div class="tr-row" style="display:grid;grid-template-columns:2fr 1.5fr 1.5fr 1fr 1fr 1fr auto auto auto;gap:6px;margin-bottom:8px;align-items:center;border-radius:8px;padding:2px;"><input type="text" class="tr-inp" placeholder="Tracking #9" data-row="8" style="background:var(--card);border:2px solid var(--border);color:#ffffff;border-radius:8px;padding:10px;font-family:'DM Sans',sans-serif;font-size:.9rem;font-weight:800;outline:none;width:100%;box-sizing:border-box;" oninput="calcDiff(this);autoSaveTracking()"><input type="date" class="tr-date" style="background:var(--card);border:2px solid var(--border);color:#ffffff;border-radius:8px;padding:10px;font-family:'DM Sans',sans-serif;font-size:.8rem;font-weight:800;outline:none;width:100%;box-sizing:border-box;" oninput="autoSaveTracking()"><input type="text" class="tr-seller" placeholder="Seller" style="background:var(--card);border:2px solid var(--border);color:#ffffff;border-radius:8px;padding:10px;font-family:'DM Sans',sans-serif;font-size:.8rem;font-weight:800;outline:none;width:100%;box-sizing:border-box;" oninput="autoSaveTracking()"><input type="number" class="tr-sent" placeholder="Sent" style="background:var(--card);border:2px solid var(--border);color:#ffffff;border-radius:8px;padding:10px;font-family:'DM Sans',sans-serif;font-size:.9rem;font-weight:800;outline:none;width:100%;box-sizing:border-box;text-align:center;" min="0" oninput="calcDiff(this);autoSaveTracking()"><input type="number" class="tr-recv" placeholder="Recv" style="background:var(--card);border:2px solid var(--border);color:#ffffff;border-radius:8px;padding:10px;font-family:'DM Sans',sans-serif;font-size:.9rem;font-weight:800;outline:none;width:100%;box-sizing:border-box;text-align:center;" min="0" oninput="calcDiff(this);autoSaveTracking()"><div class="tr-diff" style="background:var(--card);border:2px solid var(--border);border-radius:8px;padding:10px;font-family:'Bebas Neue',sans-serif;font-size:1rem;font-weight:800;text-align:center;color:var(--muted);letter-spacing:1px;">—</div><button class="tr-tick" onclick="trTick(this)" style="background:var(--card);border:2px solid var(--border);border-radius:8px;padding:8px 10px;font-size:1.1rem;cursor:pointer;min-width:42px;" data-active="0"></button><button class="tr-x" onclick="trX(this)" style="background:var(--card);border:2px solid var(--border);border-radius:8px;padding:8px 10px;font-size:1.1rem;cursor:pointer;min-width:42px;" data-active="0"></button><button onclick="moveRowToTracking(8)" style="background:rgba(243,156,18,.15);color:var(--yellow);border:1px solid rgba(243,156,18,.3);border-radius:8px;padding:8px 10px;font-size:.85rem;cursor:pointer;min-width:42px;font-weight:800;" title="Move to Tracking folder">📦</button></div>
+        <div class="tr-row" style="display:grid;grid-template-columns:2fr 1.5fr 1.5fr 1fr 1fr 1fr auto auto auto;gap:6px;margin-bottom:8px;align-items:center;border-radius:8px;padding:2px;"><input type="text" class="tr-inp" placeholder="Tracking #10" data-row="9" style="background:var(--card);border:2px solid var(--border);color:#ffffff;border-radius:8px;padding:10px;font-family:'DM Sans',sans-serif;font-size:.9rem;font-weight:800;outline:none;width:100%;box-sizing:border-box;" oninput="calcDiff(this);autoSaveTracking()"><input type="date" class="tr-date" style="background:var(--card);border:2px solid var(--border);color:#ffffff;border-radius:8px;padding:10px;font-family:'DM Sans',sans-serif;font-size:.8rem;font-weight:800;outline:none;width:100%;box-sizing:border-box;" oninput="autoSaveTracking()"><input type="text" class="tr-seller" placeholder="Seller" style="background:var(--card);border:2px solid var(--border);color:#ffffff;border-radius:8px;padding:10px;font-family:'DM Sans',sans-serif;font-size:.8rem;font-weight:800;outline:none;width:100%;box-sizing:border-box;" oninput="autoSaveTracking()"><input type="number" class="tr-sent" placeholder="Sent" style="background:var(--card);border:2px solid var(--border);color:#ffffff;border-radius:8px;padding:10px;font-family:'DM Sans',sans-serif;font-size:.9rem;font-weight:800;outline:none;width:100%;box-sizing:border-box;text-align:center;" min="0" oninput="calcDiff(this);autoSaveTracking()"><input type="number" class="tr-recv" placeholder="Recv" style="background:var(--card);border:2px solid var(--border);color:#ffffff;border-radius:8px;padding:10px;font-family:'DM Sans',sans-serif;font-size:.9rem;font-weight:800;outline:none;width:100%;box-sizing:border-box;text-align:center;" min="0" oninput="calcDiff(this);autoSaveTracking()"><div class="tr-diff" style="background:var(--card);border:2px solid var(--border);border-radius:8px;padding:10px;font-family:'Bebas Neue',sans-serif;font-size:1rem;font-weight:800;text-align:center;color:var(--muted);letter-spacing:1px;">—</div><button class="tr-tick" onclick="trTick(this)" style="background:var(--card);border:2px solid var(--border);border-radius:8px;padding:8px 10px;font-size:1.1rem;cursor:pointer;min-width:42px;" data-active="0"></button><button class="tr-x" onclick="trX(this)" style="background:var(--card);border:2px solid var(--border);border-radius:8px;padding:8px 10px;font-size:1.1rem;cursor:pointer;min-width:42px;" data-active="0"></button><button onclick="moveRowToTracking(9)" style="background:rgba(243,156,18,.15);color:var(--yellow);border:1px solid rgba(243,156,18,.3);border-radius:8px;padding:8px 10px;font-size:.85rem;cursor:pointer;min-width:42px;font-weight:800;" title="Move to Tracking folder">📦</button></div>
+        <div class="tr-row" style="display:grid;grid-template-columns:2fr 1.5fr 1.5fr 1fr 1fr 1fr auto auto auto;gap:6px;margin-bottom:8px;align-items:center;border-radius:8px;padding:2px;"><input type="text" class="tr-inp" placeholder="Tracking #11" data-row="10" style="background:var(--card);border:2px solid var(--border);color:#ffffff;border-radius:8px;padding:10px;font-family:'DM Sans',sans-serif;font-size:.9rem;font-weight:800;outline:none;width:100%;box-sizing:border-box;" oninput="calcDiff(this);autoSaveTracking()"><input type="date" class="tr-date" style="background:var(--card);border:2px solid var(--border);color:#ffffff;border-radius:8px;padding:10px;font-family:'DM Sans',sans-serif;font-size:.8rem;font-weight:800;outline:none;width:100%;box-sizing:border-box;" oninput="autoSaveTracking()"><input type="text" class="tr-seller" placeholder="Seller" style="background:var(--card);border:2px solid var(--border);color:#ffffff;border-radius:8px;padding:10px;font-family:'DM Sans',sans-serif;font-size:.8rem;font-weight:800;outline:none;width:100%;box-sizing:border-box;" oninput="autoSaveTracking()"><input type="number" class="tr-sent" placeholder="Sent" style="background:var(--card);border:2px solid var(--border);color:#ffffff;border-radius:8px;padding:10px;font-family:'DM Sans',sans-serif;font-size:.9rem;font-weight:800;outline:none;width:100%;box-sizing:border-box;text-align:center;" min="0" oninput="calcDiff(this);autoSaveTracking()"><input type="number" class="tr-recv" placeholder="Recv" style="background:var(--card);border:2px solid var(--border);color:#ffffff;border-radius:8px;padding:10px;font-family:'DM Sans',sans-serif;font-size:.9rem;font-weight:800;outline:none;width:100%;box-sizing:border-box;text-align:center;" min="0" oninput="calcDiff(this);autoSaveTracking()"><div class="tr-diff" style="background:var(--card);border:2px solid var(--border);border-radius:8px;padding:10px;font-family:'Bebas Neue',sans-serif;font-size:1rem;font-weight:800;text-align:center;color:var(--muted);letter-spacing:1px;">—</div><button class="tr-tick" onclick="trTick(this)" style="background:var(--card);border:2px solid var(--border);border-radius:8px;padding:8px 10px;font-size:1.1rem;cursor:pointer;min-width:42px;" data-active="0"></button><button class="tr-x" onclick="trX(this)" style="background:var(--card);border:2px solid var(--border);border-radius:8px;padding:8px 10px;font-size:1.1rem;cursor:pointer;min-width:42px;" data-active="0"></button><button onclick="moveRowToTracking(10)" style="background:rgba(243,156,18,.15);color:var(--yellow);border:1px solid rgba(243,156,18,.3);border-radius:8px;padding:8px 10px;font-size:.85rem;cursor:pointer;min-width:42px;font-weight:800;" title="Move to Tracking folder">📦</button></div>
+        <div class="tr-row" style="display:grid;grid-template-columns:2fr 1.5fr 1.5fr 1fr 1fr 1fr auto auto auto;gap:6px;margin-bottom:8px;align-items:center;border-radius:8px;padding:2px;"><input type="text" class="tr-inp" placeholder="Tracking #12" data-row="11" style="background:var(--card);border:2px solid var(--border);color:#ffffff;border-radius:8px;padding:10px;font-family:'DM Sans',sans-serif;font-size:.9rem;font-weight:800;outline:none;width:100%;box-sizing:border-box;" oninput="calcDiff(this);autoSaveTracking()"><input type="date" class="tr-date" style="background:var(--card);border:2px solid var(--border);color:#ffffff;border-radius:8px;padding:10px;font-family:'DM Sans',sans-serif;font-size:.8rem;font-weight:800;outline:none;width:100%;box-sizing:border-box;" oninput="autoSaveTracking()"><input type="text" class="tr-seller" placeholder="Seller" style="background:var(--card);border:2px solid var(--border);color:#ffffff;border-radius:8px;padding:10px;font-family:'DM Sans',sans-serif;font-size:.8rem;font-weight:800;outline:none;width:100%;box-sizing:border-box;" oninput="autoSaveTracking()"><input type="number" class="tr-sent" placeholder="Sent" style="background:var(--card);border:2px solid var(--border);color:#ffffff;border-radius:8px;padding:10px;font-family:'DM Sans',sans-serif;font-size:.9rem;font-weight:800;outline:none;width:100%;box-sizing:border-box;text-align:center;" min="0" oninput="calcDiff(this);autoSaveTracking()"><input type="number" class="tr-recv" placeholder="Recv" style="background:var(--card);border:2px solid var(--border);color:#ffffff;border-radius:8px;padding:10px;font-family:'DM Sans',sans-serif;font-size:.9rem;font-weight:800;outline:none;width:100%;box-sizing:border-box;text-align:center;" min="0" oninput="calcDiff(this);autoSaveTracking()"><div class="tr-diff" style="background:var(--card);border:2px solid var(--border);border-radius:8px;padding:10px;font-family:'Bebas Neue',sans-serif;font-size:1rem;font-weight:800;text-align:center;color:var(--muted);letter-spacing:1px;">—</div><button class="tr-tick" onclick="trTick(this)" style="background:var(--card);border:2px solid var(--border);border-radius:8px;padding:8px 10px;font-size:1.1rem;cursor:pointer;min-width:42px;" data-active="0"></button><button class="tr-x" onclick="trX(this)" style="background:var(--card);border:2px solid var(--border);border-radius:8px;padding:8px 10px;font-size:1.1rem;cursor:pointer;min-width:42px;" data-active="0"></button><button onclick="moveRowToTracking(11)" style="background:rgba(243,156,18,.15);color:var(--yellow);border:1px solid rgba(243,156,18,.3);border-radius:8px;padding:8px 10px;font-size:.85rem;cursor:pointer;min-width:42px;font-weight:800;" title="Move to Tracking folder">📦</button></div>
+        <div class="tr-row" style="display:grid;grid-template-columns:2fr 1.5fr 1.5fr 1fr 1fr 1fr auto auto auto;gap:6px;margin-bottom:8px;align-items:center;border-radius:8px;padding:2px;"><input type="text" class="tr-inp" placeholder="Tracking #13" data-row="12" style="background:var(--card);border:2px solid var(--border);color:#ffffff;border-radius:8px;padding:10px;font-family:'DM Sans',sans-serif;font-size:.9rem;font-weight:800;outline:none;width:100%;box-sizing:border-box;" oninput="calcDiff(this);autoSaveTracking()"><input type="date" class="tr-date" style="background:var(--card);border:2px solid var(--border);color:#ffffff;border-radius:8px;padding:10px;font-family:'DM Sans',sans-serif;font-size:.8rem;font-weight:800;outline:none;width:100%;box-sizing:border-box;" oninput="autoSaveTracking()"><input type="text" class="tr-seller" placeholder="Seller" style="background:var(--card);border:2px solid var(--border);color:#ffffff;border-radius:8px;padding:10px;font-family:'DM Sans',sans-serif;font-size:.8rem;font-weight:800;outline:none;width:100%;box-sizing:border-box;" oninput="autoSaveTracking()"><input type="number" class="tr-sent" placeholder="Sent" style="background:var(--card);border:2px solid var(--border);color:#ffffff;border-radius:8px;padding:10px;font-family:'DM Sans',sans-serif;font-size:.9rem;font-weight:800;outline:none;width:100%;box-sizing:border-box;text-align:center;" min="0" oninput="calcDiff(this);autoSaveTracking()"><input type="number" class="tr-recv" placeholder="Recv" style="background:var(--card);border:2px solid var(--border);color:#ffffff;border-radius:8px;padding:10px;font-family:'DM Sans',sans-serif;font-size:.9rem;font-weight:800;outline:none;width:100%;box-sizing:border-box;text-align:center;" min="0" oninput="calcDiff(this);autoSaveTracking()"><div class="tr-diff" style="background:var(--card);border:2px solid var(--border);border-radius:8px;padding:10px;font-family:'Bebas Neue',sans-serif;font-size:1rem;font-weight:800;text-align:center;color:var(--muted);letter-spacing:1px;">—</div><button class="tr-tick" onclick="trTick(this)" style="background:var(--card);border:2px solid var(--border);border-radius:8px;padding:8px 10px;font-size:1.1rem;cursor:pointer;min-width:42px;" data-active="0"></button><button class="tr-x" onclick="trX(this)" style="background:var(--card);border:2px solid var(--border);border-radius:8px;padding:8px 10px;font-size:1.1rem;cursor:pointer;min-width:42px;" data-active="0"></button><button onclick="moveRowToTracking(12)" style="background:rgba(243,156,18,.15);color:var(--yellow);border:1px solid rgba(243,156,18,.3);border-radius:8px;padding:8px 10px;font-size:.85rem;cursor:pointer;min-width:42px;font-weight:800;" title="Move to Tracking folder">📦</button></div>
+        <div class="tr-row" style="display:grid;grid-template-columns:2fr 1.5fr 1.5fr 1fr 1fr 1fr auto auto auto;gap:6px;margin-bottom:8px;align-items:center;border-radius:8px;padding:2px;"><input type="text" class="tr-inp" placeholder="Tracking #14" data-row="13" style="background:var(--card);border:2px solid var(--border);color:#ffffff;border-radius:8px;padding:10px;font-family:'DM Sans',sans-serif;font-size:.9rem;font-weight:800;outline:none;width:100%;box-sizing:border-box;" oninput="calcDiff(this);autoSaveTracking()"><input type="date" class="tr-date" style="background:var(--card);border:2px solid var(--border);color:#ffffff;border-radius:8px;padding:10px;font-family:'DM Sans',sans-serif;font-size:.8rem;font-weight:800;outline:none;width:100%;box-sizing:border-box;" oninput="autoSaveTracking()"><input type="text" class="tr-seller" placeholder="Seller" style="background:var(--card);border:2px solid var(--border);color:#ffffff;border-radius:8px;padding:10px;font-family:'DM Sans',sans-serif;font-size:.8rem;font-weight:800;outline:none;width:100%;box-sizing:border-box;" oninput="autoSaveTracking()"><input type="number" class="tr-sent" placeholder="Sent" style="background:var(--card);border:2px solid var(--border);color:#ffffff;border-radius:8px;padding:10px;font-family:'DM Sans',sans-serif;font-size:.9rem;font-weight:800;outline:none;width:100%;box-sizing:border-box;text-align:center;" min="0" oninput="calcDiff(this);autoSaveTracking()"><input type="number" class="tr-recv" placeholder="Recv" style="background:var(--card);border:2px solid var(--border);color:#ffffff;border-radius:8px;padding:10px;font-family:'DM Sans',sans-serif;font-size:.9rem;font-weight:800;outline:none;width:100%;box-sizing:border-box;text-align:center;" min="0" oninput="calcDiff(this);autoSaveTracking()"><div class="tr-diff" style="background:var(--card);border:2px solid var(--border);border-radius:8px;padding:10px;font-family:'Bebas Neue',sans-serif;font-size:1rem;font-weight:800;text-align:center;color:var(--muted);letter-spacing:1px;">—</div><button class="tr-tick" onclick="trTick(this)" style="background:var(--card);border:2px solid var(--border);border-radius:8px;padding:8px 10px;font-size:1.1rem;cursor:pointer;min-width:42px;" data-active="0"></button><button class="tr-x" onclick="trX(this)" style="background:var(--card);border:2px solid var(--border);border-radius:8px;padding:8px 10px;font-size:1.1rem;cursor:pointer;min-width:42px;" data-active="0"></button><button onclick="moveRowToTracking(13)" style="background:rgba(243,156,18,.15);color:var(--yellow);border:1px solid rgba(243,156,18,.3);border-radius:8px;padding:8px 10px;font-size:.85rem;cursor:pointer;min-width:42px;font-weight:800;" title="Move to Tracking folder">📦</button></div>
+        <div class="tr-row" style="display:grid;grid-template-columns:2fr 1.5fr 1.5fr 1fr 1fr 1fr auto auto auto;gap:6px;margin-bottom:8px;align-items:center;border-radius:8px;padding:2px;"><input type="text" class="tr-inp" placeholder="Tracking #15" data-row="14" style="background:var(--card);border:2px solid var(--border);color:#ffffff;border-radius:8px;padding:10px;font-family:'DM Sans',sans-serif;font-size:.9rem;font-weight:800;outline:none;width:100%;box-sizing:border-box;" oninput="calcDiff(this);autoSaveTracking()"><input type="date" class="tr-date" style="background:var(--card);border:2px solid var(--border);color:#ffffff;border-radius:8px;padding:10px;font-family:'DM Sans',sans-serif;font-size:.8rem;font-weight:800;outline:none;width:100%;box-sizing:border-box;" oninput="autoSaveTracking()"><input type="text" class="tr-seller" placeholder="Seller" style="background:var(--card);border:2px solid var(--border);color:#ffffff;border-radius:8px;padding:10px;font-family:'DM Sans',sans-serif;font-size:.8rem;font-weight:800;outline:none;width:100%;box-sizing:border-box;" oninput="autoSaveTracking()"><input type="number" class="tr-sent" placeholder="Sent" style="background:var(--card);border:2px solid var(--border);color:#ffffff;border-radius:8px;padding:10px;font-family:'DM Sans',sans-serif;font-size:.9rem;font-weight:800;outline:none;width:100%;box-sizing:border-box;text-align:center;" min="0" oninput="calcDiff(this);autoSaveTracking()"><input type="number" class="tr-recv" placeholder="Recv" style="background:var(--card);border:2px solid var(--border);color:#ffffff;border-radius:8px;padding:10px;font-family:'DM Sans',sans-serif;font-size:.9rem;font-weight:800;outline:none;width:100%;box-sizing:border-box;text-align:center;" min="0" oninput="calcDiff(this);autoSaveTracking()"><div class="tr-diff" style="background:var(--card);border:2px solid var(--border);border-radius:8px;padding:10px;font-family:'Bebas Neue',sans-serif;font-size:1rem;font-weight:800;text-align:center;color:var(--muted);letter-spacing:1px;">—</div><button class="tr-tick" onclick="trTick(this)" style="background:var(--card);border:2px solid var(--border);border-radius:8px;padding:8px 10px;font-size:1.1rem;cursor:pointer;min-width:42px;" data-active="0"></button><button class="tr-x" onclick="trX(this)" style="background:var(--card);border:2px solid var(--border);border-radius:8px;padding:8px 10px;font-size:1.1rem;cursor:pointer;min-width:42px;" data-active="0"></button><button onclick="moveRowToTracking(14)" style="background:rgba(243,156,18,.15);color:var(--yellow);border:1px solid rgba(243,156,18,.3);border-radius:8px;padding:8px 10px;font-size:.85rem;cursor:pointer;min-width:42px;font-weight:800;" title="Move to Tracking folder">📦</button></div>
+      </div>
+      <!-- TOTALS SUMMARY BAR -->
+      <div id="trackingTotals" style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-top:12px;padding-top:12px;border-top:1px solid var(--border);">
+        <div style="background:var(--card);border-radius:8px;padding:10px;text-align:center;">
+          <div style="font-size:.6rem;letter-spacing:2px;text-transform:uppercase;color:var(--muted);font-weight:800;margin-bottom:4px;">Total Sent</div>
+          <div id="totSent" style="font-family:'Bebas Neue',sans-serif;font-size:1.8rem;letter-spacing:1px;color:#ffffff;">0</div>
+        </div>
+        <div style="background:var(--card);border-radius:8px;padding:10px;text-align:center;">
+          <div style="font-size:.6rem;letter-spacing:2px;text-transform:uppercase;color:var(--muted);font-weight:800;margin-bottom:4px;">Total Recv</div>
+          <div id="totRecv" style="font-family:'Bebas Neue',sans-serif;font-size:1.8rem;letter-spacing:1px;color:var(--green);">0</div>
+        </div>
+        <div style="background:var(--card);border-radius:8px;padding:10px;text-align:center;">
+          <div style="font-size:.6rem;letter-spacing:2px;text-transform:uppercase;color:var(--muted);font-weight:800;margin-bottom:4px;">Qty Lost</div>
+          <div id="totMissing" style="font-family:'Bebas Neue',sans-serif;font-size:1.8rem;letter-spacing:1px;color:var(--muted);">0</div>
+        </div>
+      </div>
+    </div>
+    <div class="rpd" id="rpDate"></div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:16px;">
+      <button onclick="saveReportSettings()" style="background:rgba(58,134,255,.2);color:#3a86ff;border:2px solid rgba(58,134,255,.4);border-radius:10px;padding:14px;font-family:'Bebas Neue',sans-serif;font-size:1.1rem;letter-spacing:3px;cursor:pointer;">💾 SAVE</button>
+      <button class="bpr" onclick="window.print()" style="margin-bottom:0;">🖨 PRINT / SAVE AS PDF</button>
+    </div>
+    <button onclick="resetReport()" style="width:100%;background:rgba(230,57,70,.1);color:var(--red2);border:2px solid rgba(230,57,70,.3);border-radius:10px;padding:12px;font-family:'Bebas Neue',sans-serif;font-size:1rem;letter-spacing:3px;cursor:pointer;margin-bottom:16px;">🔄 RESET FOR NEW WEEK</button>
+    <div class="print-header" style="display:none;text-align:center;margin-bottom:20px;padding-bottom:12px;border-bottom:2px solid #000;">
+      <div style="font-size:22px;font-weight:bold;letter-spacing:3px;margin-bottom:6px;">TRACKER REPORT</div>
+      <div id="rpDatePrint" style="font-size:11px;color:#555;margin-bottom:8px;"></div>
+      <div id="rpStockDatePrint" style="font-size:18px;font-weight:bold;letter-spacing:2px;color:#000;"></div>
+    </div>
+    <div id="rContentLocked" style="text-align:center;padding:30px 20px;background:var(--surface);border:2px solid var(--border);border-radius:12px;">
+      <div style="font-size:3rem;margin-bottom:12px;">🔒</div>
+      <div style="font-family:'Bebas Neue',sans-serif;font-size:1.3rem;letter-spacing:3px;color:var(--muted);margin-bottom:16px;">SALES LOCKED</div>
+      <input id="reportPin" type="password" placeholder="PIN" maxlength="20" style="background:var(--card);border:2px solid rgba(243,156,18,.4);color:var(--text);border-radius:8px;padding:12px;font-size:1.1rem;font-weight:700;outline:none;width:120px;text-align:center;letter-spacing:4px;display:block;margin:0 auto 12px;" onkeydown="if(event.key==='Enter')unlockReport()">
+      <button onclick="unlockReport()" style="background:rgba(243,156,18,.2);color:var(--yellow);border:2px solid rgba(243,156,18,.4);border-radius:10px;padding:14px 28px;font-family:'Bebas Neue',sans-serif;font-size:1.1rem;letter-spacing:3px;cursor:pointer;">GO</button>
+    </div>
+    <div id="rContent" style="display:none;"></div>
+  </div>
+
+  <!-- TRACKING FOLDER -->
+  <div class="page" id="pageK">
+    <div class="page-title" style="color:var(--yellow);">📦 Tracking</div>
+    <div class="page-sub">All saved tracking numbers</div>
+    <input type="text" id="trackSearch" placeholder="🔍 Search by tracking, seller or date..." oninput="renderTrackingFolder()" style="background:var(--card);border:2px solid var(--border);color:var(--text);border-radius:10px;padding:14px 16px;font-family:'DM Sans',sans-serif;font-size:.95rem;font-weight:700;outline:none;width:100%;box-sizing:border-box;margin-bottom:14px;">
+    <div id="trackFolderList"></div>
+  </div>
+
+  <!-- ARCHIVE -->
+  <div class="page" id="pageA">
+    <div class="page-title yel">📂 Archive</div>
+    <div class="page-sub">Completed weeks — tap to view or print</div>
+    <div id="weeklyArchiveSection" style="padding-bottom:20px;"></div>
+  </div>
+
+  <!-- TRASH -->
+  <div class="page" id="pageT">
+    <div class="page-title" style="color:#ff6b6b;">🗑 Trash</div>
+    <div class="page-sub">Deleted items — tap restore to recover</div>
+    <div style="display:flex;gap:8px;margin-bottom:16px;">
+      <button onclick="emptyTrash()" style="flex:1;background:rgba(230,57,70,.15);color:var(--red2);border:1px solid rgba(230,57,70,.3);border-radius:8px;padding:12px;font-family:'Bebas Neue',sans-serif;font-size:1rem;letter-spacing:2px;cursor:pointer;font-weight:700;">🗑 EMPTY TRASH</button>
+    </div>
+    <div id="trashList"></div>
+  </div>
+</div>
+
+<script>
+function unlockReport(){
+  const locked=document.getElementById('rContentLocked');
+  const cont=document.getElementById('rContent');
+  if(!locked||!cont)return;
+  if(cont.style.display==='block')return;
+  const inp=document.getElementById('reportPin');
+  const pin=(inp?inp.value:'').trim().toLowerCase().replace(/\s/g,'');
+  if(pin==='caspa5757'){
+    locked.style.display='none';
+    cont.style.display='block';
+    if(inp)inp.value='';
+    buildReport();
+  } else {
+    if(inp){inp.value='';inp.focus();}
+  }
+}
+window.unlockReport=unlockReport;
+
+function lockReport(){
+  gid('rContent').style.display='none';
+  gid('rContent').innerHTML='';
+  gid('rContentLocked').style.display='block';
+}
+window.lockReport=lockReport;
+
+function unlockProfit(){
+  const locked=document.getElementById('profitLocked');
+  const unlocked=document.getElementById('profitUnlocked');
+  if(!locked||!unlocked)return;
+  if(unlocked.style.display==='block')return;
+  const inp=document.getElementById('profitPin');
+  const pin=(inp?inp.value:'').trim().toLowerCase().replace(/\s/g,'');
+  if(pin==='caspa5757'){
+    locked.style.display='none';
+    unlocked.style.display='block';
+    if(inp)inp.value='';
+  } else {
+    if(inp){inp.value='';inp.focus();}
+  }
+}
+window.unlockProfit=unlockProfit;
+
+function lockProfit(){
+  gid('profitLocked').style.display='block';
+  gid('profitUnlocked').style.display='none';
+  gid('profitLockArea').style.cursor='pointer';
+}
+window.lockProfit=lockProfit;
+
+function doLogin(){
+  var pw=document.getElementById('pwInput').value.trim();
+  if(pw==='WHJH2025'){
+    document.getElementById('loginErr').style.display='none';
+    document.getElementById('loginScreen').style.display='none';
+    document.getElementById('appScreen').style.display='block';
+    window._pendingLogin=true;
+  } else {
+    document.getElementById('loginErr').style.display='block';
+    document.getElementById('pwInput').value='';
+  }
+}
+document.getElementById('pwInput').addEventListener('keydown',function(e){if(e.key==='Enter')doLogin();});
+</script>
+<script type="module">
+import{initializeApp}from"https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
+import{getFirestore,collection,doc,onSnapshot,setDoc,deleteDoc,getDoc}from"https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+const app=initializeApp({apiKey:"AIzaSyASLxiPERsMEbNoiE6AhC2BZzuIE1-EMA",authDomain:"fresh-debt-tracker.firebaseapp.com",projectId:"fresh-debt-tracker",storageBucket:"fresh-debt-tracker.firebasestorage.app",messagingSenderId:"830202607329",appId:"1:830202607329:web:0e67a7db4d536eebb2a9a0"});
+const db=getFirestore(app);
+const PASSWORD="WHJH2025";
+
+
+
+function gid(id){return document.getElementById(id);}
+function genId(){return Date.now().toString(36)+Math.random().toString(36).slice(2);}
+
+function fmt(n){const v=parseFloat(n||0);return(v<0?'-£'+Math.abs(v).toFixed(2):'£'+v.toFixed(2));}
+function fmtD(s){if(!s)return'—';const[y,m,d]=s.split('-');return d+'/'+m+'/'+y;}
+function today(){return new Date().toISOString().split('T')[0];}
+
+// Size definitions
+const KG_SIZES = [1,2,3,4,5,6,7,8,9,10];
+const BAG_SIZES = [1,2,3,4,5,6,7,8,9,10];
+
+function getSizeOptions(type){
+  if(type==='Sticks') return null;
+  const opts = [];
+  KG_SIZES.forEach(k=> opts.push({key:`kg_${k}`, label:`${k}kg`}));
+  BAG_SIZES.forEach(b=> opts.push({key:`bag_${b}`, label:`${b} x 10lb bag${b>1?'s':''}`}));
+  return opts;
+}
+
+function setSynced(){
+  gid('syncDot').className='sync-dot live';
+  gid('syncTxt').textContent='Live — synced with Mo';
+  gid('syncTime').textContent='Updated: '+new Date().toLocaleTimeString('en-GB',{hour:'2-digit',minute:'2-digit'});
+}
+function setOffline(){
+  gid('syncDot').className='sync-dot off';
+  gid('syncTxt').textContent='Reconnecting...';
+}
+
+// LOGIN
+function startApp(){
+  gid('dND').value=today();
+  gid('fND').value=today();
+  startListeners();
+}
+// Handle login that happened before module loaded
+if(window._pendingLogin){
+  startApp();
+} else {
+  window._startApp=startApp;
+  // Also poll in case login happens after module loads
+  var loginCheck=setInterval(function(){
+    if(window._pendingLogin){
+      clearInterval(loginCheck);
+      startApp();
+    }
+  },100);
+}
+document.getElementById('pwInput').addEventListener('keydown',function(e){if(e.key==='Enter')doLogin();});
+
+let currentPage='D';
+function goPage(p){
+  if(currentPage==='R'&&p!=='R'){
+    const monthSel=gid('rMonthFilter');
+    const selMonth=monthSel?monthSel.value:'';
+    if(selMonth&&selMonth!=='all') autoArchiveMonth(selMonth);
+  }
+  currentPage=p;
+  ['D','F','R','A','K','T'].forEach(x=>{
+    gid('page'+x).classList.toggle('active',p===x);
+    gid('nav'+x).className='nav-btn'+(p===x?(x==='D'?' ad':x==='F'?' af':x==='T'?' at':x==='A'?' ay':x==='K'?' ak':' ar'):'');
+  });
+  if(p==='R'){loadReportSettings();if(gid('rContent').style.display==='block')buildReport();}
+  if(p==='T')renderTrash();
+  if(p==='A')loadMonthlyArchive();
+  if(p==='K')renderTrackingFolder();
+}
+window.goPage=goPage;
+
+window.printWeek=async function(archiveDocId){
+  try{
+    const {collection:col2,getDocs}=await import('https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js');
+    const snap=await getDocs(col2(db,'weeklyArchive'));
+    const arc=snap.docs.map(d=>d.data()).find(d=>(d.weekKey+'_'+d.stockId)===archiveDocId);
+    if(!arc){alert('Could not find this week.');return;}
+    const typeMap={};
+    (arc.sales||[]).forEach(sl=>{if(!typeMap[sl.type])typeMap[sl.type]=[];typeMap[sl.type].push(sl);});
+    let rows='';
+    Object.keys(typeMap).forEach(type=>{
+      const typeSales=typeMap[type];
+      const tPd=typeSales.reduce((s,sl)=>s+sl.paid,0);
+      const tO=typeSales.reduce((s,sl)=>s+sl.owed,0);
+      rows+=`<div style="margin-bottom:16px;"><div style="font-weight:900;font-size:14px;margin-bottom:6px;">${type.toUpperCase()}</div>
+      <table style="width:100%;border-collapse:collapse;font-size:11px;"><thead><tr style="border-bottom:2px solid #000;">
+      <th style="text-align:left;padding:4px;">Date</th><th style="text-align:left;padding:4px;">Name</th><th style="text-align:left;padding:4px;">Size</th><th style="text-align:right;padding:4px;">Qty</th><th style="text-align:right;padding:4px;">Price</th><th style="text-align:right;padding:4px;">Paid</th><th style="text-align:right;padding:4px;">Owed</th>
+      </tr></thead><tbody>
+      ${typeSales.map(sl=>`<tr style="border-bottom:1px solid #ccc;"><td style="padding:4px;">${fmtD(sl.dt)}</td><td style="padding:4px;">${sl.buyer}</td><td style="padding:4px;">${sl.size}</td><td style="padding:4px;text-align:right;">${sl.qty}</td><td style="padding:4px;text-align:right;">${fmt(sl.price)}</td><td style="padding:4px;text-align:right;">${fmt(sl.paid)}</td><td style="padding:4px;text-align:right;">${fmt(sl.owed)}</td></tr>`).join('')}
+      <tr style="border-top:2px solid #000;font-weight:900;"><td colspan="5" style="padding:4px;">TOTAL</td><td style="padding:4px;text-align:right;">${fmt(tPd)}</td><td style="padding:4px;text-align:right;">${fmt(tO)}</td></tr>
+      </tbody></table></div>`;
+    });
+    const win=window.open('','_blank');
+    win.document.write(`<html><head><title>Week Report — ${arc.weekLabel||arc.weekKey}</title>
+    <style>body{font-family:sans-serif;padding:20px;color:#000;}@media print{button{display:none;}}</style></head><body>
+    <div style="text-align:center;border-bottom:2px solid #000;padding-bottom:10px;margin-bottom:16px;">
+      <div style="font-size:22px;font-weight:900;letter-spacing:3px;">FRESH TRACKER — WEEK REPORT</div>
+      <div style="font-size:13px;margin-top:4px;">${arc.weekLabel||arc.weekKey}${arc.stockName?' — '+arc.stockName:''}</div>
+    </div>
+    <div style="display:flex;gap:20px;margin-bottom:16px;">
+      <div><strong>Total Collected:</strong> ${fmt(arc.totalPaid)}</div>
+      <div><strong>Total Owed:</strong> ${fmt(arc.totalOwed)}</div>
+      <div><strong>Total Sales:</strong> ${arc.sales?.length||0}</div>
+    </div>
+    ${rows}
+    <button onclick="window.print()" style="margin-top:20px;padding:10px 24px;font-size:14px;background:#000;color:#fff;border:none;cursor:pointer;border-radius:6px;">🖨 PRINT</button>
+    </body></html>`);
+    win.document.close();
+  }catch(e){alert('Print error: '+e.message);}
+}
+
+// Print a single date section from the live report
+window.printDateSection=function(sectionId, dateLabel){
+  const el=document.getElementById(sectionId);
+  if(!el){alert('Section not found.');return;}
+  const win=window.open('','_blank');
+  win.document.write(`<html><head><title>Report — ${dateLabel}</title>
+  <style>body{font-family:sans-serif;padding:20px;color:#000;}table{width:100%;border-collapse:collapse;font-size:11px;}th{text-align:left;padding:5px;border-bottom:2px solid #000;}td{padding:5px;border-bottom:1px solid #ccc;}@media print{button{display:none;}}</style></head><body>
+  <div style="text-align:center;border-bottom:2px solid #000;padding-bottom:10px;margin-bottom:16px;">
+    <div style="font-size:20px;font-weight:900;letter-spacing:3px;">FRESH TRACKER REPORT</div>
+    <div style="font-size:13px;margin-top:4px;">${dateLabel}</div>
+  </div>
+  ${el.innerHTML}
+  <button onclick="window.print()" style="margin-top:20px;padding:10px 24px;font-size:14px;background:#000;color:#fff;border:none;cursor:pointer;border-radius:6px;">🖨 PRINT</button>
+  </body></html>`);
+  win.document.close();
+}
+
+// Delete all sales on a specific date from the live fresh data
+window.deleteDateSales=async function(date){
+  if(!confirm(`Delete ALL sales on ${date}? This cannot be undone.`))return;
+  try{
+    let changed=false;
+    const updates=fresh.map(async item=>{
+      const before=(item.sales||[]).length;
+      item.sales=(item.sales||[]).filter(sl=>sl.dt!==date);
+      if(item.sales.length!==before){
+        await setDoc(doc(db,'fresh',item.id),item);
+        changed=true;
+      }
+    });
+    await Promise.all(updates);
+    if(changed)buildReport();
+  }catch(e){alert('Error: '+e.message);}
+}
+
+// Delete a week from archive — works with both old and new entries
+window.deleteWeek=async function(docId,label){
+  if(!confirm(`Delete "${label}" from the archive? This cannot be undone.`))return;
+  try{
+    await deleteDoc(doc(db,'weeklyArchive',docId));
+    loadMonthlyArchive();
+  }catch(e){alert('Error: '+e.message);}
+}
+
+// ══ TRACKING FOLDER ══
+let trackingFolder=[];
+
+async function loadTrackingFolder(){
+  try{
+    const {collection:col2,getDocs}=await import('https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js');
+    const snap=await getDocs(col2(db,'trackingFolder'));
+    trackingFolder=snap.docs.map(d=>({...d.data(),_docId:d.id}));
+    trackingFolder.sort((a,b)=>b.savedAt?.localeCompare(a.savedAt||'')||0);
+  }catch(e){trackingFolder=[];}
+}
+
+window.renderTrackingFolder=async function(){
+  const el=gid('trackFolderList');
+  if(!el)return;
+  if(!trackingFolder.length)await loadTrackingFolder();
+  const q=(gid('trackSearch')?.value||'').toLowerCase().trim();
+  const items=q?trackingFolder.filter(t=>
+    (t.num||'').toLowerCase().includes(q)||
+    (t.seller||'').toLowerCase().includes(q)||
+    (t.date||'').toLowerCase().includes(q)||
+    (t.weekLabel||'').toLowerCase().includes(q)
+  ):trackingFolder;
+
+  if(!items.length){
+    el.innerHTML=`<div style="padding:20px;text-align:center;color:var(--muted);font-weight:700;">${q?'No results found':'No tracking numbers saved yet'}</div>`;
+    return;
+  }
+
+  el.innerHTML=items.map(t=>`
+    <div style="background:var(--surface);border:2px solid var(--border);border-radius:12px;padding:14px;margin-bottom:10px;">
+      <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:8px;flex-wrap:wrap;">
+        <div style="flex:1;">
+          <div style="font-family:'Bebas Neue',sans-serif;font-size:1.1rem;letter-spacing:2px;color:var(--yellow);">${t.num||'—'}</div>
+          <div style="font-size:.8rem;color:var(--muted);font-weight:700;margin-top:4px;">${t.date?'📅 '+t.date:''} ${t.seller?'· 👤 '+t.seller:''}</div>
+          <div style="display:flex;gap:10px;margin-top:8px;flex-wrap:wrap;">
+            ${t.sent?`<span style="font-size:.75rem;background:var(--card);padding:4px 10px;border-radius:6px;font-weight:800;color:#fff;">📤 Sent: ${t.sent}</span>`:''}
+            ${t.recv?`<span style="font-size:.75rem;background:var(--card);padding:4px 10px;border-radius:6px;font-weight:800;color:var(--green);">📥 Recv: ${t.recv}</span>`:''}
+            ${(parseInt(t.sent||0)-parseInt(t.recv||0))>0?`<span style="font-size:.75rem;background:rgba(230,57,70,.15);padding:4px 10px;border-radius:6px;font-weight:800;color:var(--red2);">❌ Lost: ${parseInt(t.sent||0)-parseInt(t.recv||0)}</span>`:''}
+            ${t.status==='delivered'?`<span style="font-size:.75rem;background:rgba(46,204,113,.15);padding:4px 10px;border-radius:6px;font-weight:800;color:var(--green);">✅ Delivered</span>`:t.status==='issue'?`<span style="font-size:.75rem;background:rgba(230,57,70,.15);padding:4px 10px;border-radius:6px;font-weight:800;color:var(--red2);">⚠️ Issue</span>`:''}
+          </div>
+        </div>
+        <button onclick="deleteTrackingEntry('${t._docId}')" style="background:rgba(230,57,70,.1);color:var(--red2);border:1px solid rgba(230,57,70,.3);border-radius:8px;padding:8px 12px;font-family:'Bebas Neue',sans-serif;font-size:.85rem;letter-spacing:1px;cursor:pointer;">🗑</button>
+      </div>
+    </div>`).join('');
+}
+
+window.deleteTrackingEntry=async function(docId){
+  if(!confirm('Delete this tracking entry?'))return;
+  try{
+    await deleteDoc(doc(db,'trackingFolder',docId));
+    trackingFolder=trackingFolder.filter(t=>t._docId!==docId);
+    renderTrackingFolder();
+  }catch(e){alert('Error: '+e.message);}
+}
+
+window.moveRowToTracking=async function(rowIndex){
+  const rows=document.querySelectorAll('.tr-row');
+  // Find by data-row attribute first, fall back to index
+  let row=null;
+  rows.forEach(r=>{if(parseInt(r.querySelector('.tr-inp')?.dataset.row||'-1')===rowIndex)row=r;});
+  if(!row)row=rows[rowIndex];
+  if(!row)return;
+  const num=row.querySelector('.tr-inp')?.value.trim();
+  if(!num){alert('No tracking number on this row.');return;}
+  const entry={
+    num,
+    date:row.querySelector('.tr-date')?.value||'',
+    seller:row.querySelector('.tr-seller')?.value.trim()||'',
+    sent:row.querySelector('.tr-sent')?.value||'',
+    recv:row.querySelector('.tr-recv')?.value||'',
+    status:row.querySelector('.tr-tick')?.dataset.active==='1'?'delivered':row.querySelector('.tr-x')?.dataset.active==='1'?'issue':'',
+    savedAt:new Date().toISOString()
+  };
+  try{
+    const {collection:col3}=await import('https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js');
+    const newDoc=doc(col3(db,'trackingFolder'));
+    await setDoc(newDoc,{...entry,_docId:newDoc.id});
+    // Clear the row
+    row.querySelector('.tr-inp').value='';
+    row.querySelector('.tr-date').value='';
+    row.querySelector('.tr-seller').value='';
+    row.querySelector('.tr-sent').value='';
+    row.querySelector('.tr-recv').value='';
+    const tick=row.querySelector('.tr-tick');
+    const x=row.querySelector('.tr-x');
+    tick.dataset.active='0';tick.textContent='';tick.style.background='var(--card)';tick.style.borderColor='var(--border)';
+    x.dataset.active='0';x.textContent='';x.style.background='var(--card)';x.style.borderColor='var(--border)';
+    row.querySelector('.tr-diff').textContent='—';
+    row.querySelector('.tr-diff').style.color='var(--muted)';
+    autoSaveTracking();
+    trackingFolder=[];// force reload next time
+    alert('✅ Moved to Tracking folder!');
+  }catch(e){alert('Error: '+e.message);}
+}
+
+async function autoArchiveMonth(selMonth){
+  try{
+    const allSales=[];
+    fresh.forEach(item=>{
+      (item.sales||[]).forEach(sl=>{
+        if(sl.saleType==='booking'&&!sl.collected)return;
+        allSales.push({buyer:sl.buyer,type:item.type,size:sl.size||'—',dt:sl.dt,qty:sl.qty,price:parseFloat(sl.price||0),paid:salePaidAmt(sl),owed:saleOwed(sl)});
+      });
+    });
+    const monthSales=allSales.filter(sl=>sl.dt&&sl.dt.startsWith(selMonth));
+    if(!monthSales.length)return;
+    const totalPaid=monthSales.reduce((s,sl)=>s+sl.paid,0);
+    const totalOwed=monthSales.reduce((s,sl)=>s+sl.owed,0);
+    const totalPrice=monthSales.reduce((s,sl)=>s+sl.price,0);
+    const archiveData={month:selMonth,sales:monthSales,totalPaid,totalOwed,totalPrice,savedAt:new Date().toISOString()};
+    await setDoc(doc(db,'monthlyArchive',selMonth),archiveData);
+  }catch(e){console.error('Auto-archive error:',e);}
+}
+
+async function loadReportSettings(){
+  try{
+    // Load seller/date from separate doc so tracking saves don't overwrite them
+    const metaSnap=await getDoc(doc(db,'settings','reportMeta'));
+    if(metaSnap.exists()){
+      const m=metaSnap.data();
+      if(m.seller&&gid('rStockLabel'))gid('rStockLabel').value=m.seller;
+      if(m.date&&gid('rManualDate'))gid('rManualDate').value=m.date;
+      if(m.stockDate&&gid('rStockDate'))gid('rStockDate').value=m.stockDate;
+    }
+    const snap=await getDoc(doc(db,'settings','reportData'));
+    if(snap.exists()){
+      const d=snap.data();
+      if(d.stockDate&&!gid('rStockDate').value)gid('rStockDate').value=d.stockDate;
+      if(d.tracking){
+        const rows=document.querySelectorAll('.tr-row');
+        rows.forEach((row,i)=>{
+          if(d.tracking[i]){
+            row.querySelector('.tr-inp').value=d.tracking[i].num||'';
+            row.querySelector('.tr-date').value=d.tracking[i].date||'';
+            row.querySelector('.tr-seller').value=d.tracking[i].seller||'';
+            row.querySelector('.tr-sent').value=d.tracking[i].sent||'';
+            row.querySelector('.tr-recv').value=d.tracking[i].recv||'';
+            // Recalculate diff for this row
+            const sentInp=row.querySelector('.tr-sent');
+            if(window.calcDiff)window.calcDiff(sentInp);
+            if(d.tracking[i].status==='delivered'){
+              const btn=row.querySelector('.tr-tick');
+              btn.dataset.active='0';
+              trTick(btn);
+            } else if(d.tracking[i].status==='issue'){
+              const btn=row.querySelector('.tr-x');
+              btn.dataset.active='0';
+              trX(btn);
+            }
+          }
+        });
+      }
+    }
+  }catch(e){}
+}
+
+async function saveReportSettings(){
+  const rows=document.querySelectorAll('.tr-row');
+  const tracking=[];
+  rows.forEach(row=>{
+    const num=row.querySelector('.tr-inp').value.trim();
+    const date=row.querySelector('.tr-date').value.trim();
+    const seller=row.querySelector('.tr-seller').value.trim();
+    const sent=row.querySelector('.tr-sent').value.trim();
+    const recv=row.querySelector('.tr-recv').value.trim();
+    const tick=row.querySelector('.tr-tick').dataset.active==='1';
+    const x=row.querySelector('.tr-x').dataset.active==='1';
+    tracking.push({num,date,seller,sent,recv,status:tick?'delivered':x?'issue':''});
+  });
+  try{
+    await setDoc(doc(db,'settings','reportMeta'),{
+      seller:gid('rStockLabel')?.value.trim()||'',
+      date:gid('rManualDate')?.value.trim()||'',
+      stockDate:gid('rStockDate')?.value||''
+    });
+    await setDoc(doc(db,'settings','reportData'),{tracking},{merge:true});
+    alert('✅ Report settings saved!');
+  }catch(e){alert('Error saving: '+e.message);}
+}
+async function resetReport(){
+  if(!confirm('Reset all report fields and tracking numbers for new week?'))return;
+  gid('rStockLabel').value='';
+  gid('rManualDate').value='';
+  gid('rStockDate').value='';
+  document.querySelectorAll('.tr-row').forEach(row=>{
+    row.querySelector('.tr-inp').value='';
+    row.querySelector('.tr-date').value='';
+    row.querySelector('.tr-seller').value='';
+    row.querySelector('.tr-sent').value='';
+    row.querySelector('.tr-recv').value='';
+    const tick=row.querySelector('.tr-tick');
+    const x=row.querySelector('.tr-x');
+    tick.dataset.active='0';tick.textContent='';
+    x.dataset.active='0';x.textContent='';
+  });
+  await setDoc(doc(db,'settings','reportMeta'),{seller:'',date:'',stockDate:''});
+  await setDoc(doc(db,'settings','reportData'),{tracking:[]},{merge:true});
+  alert('✅ Reset! Ready for new week.');
+}
+window.resetReport=resetReport;
+window.saveReportSettings=saveReportSettings;
+
+// Stock Form renderer
+function renderStockForm(){
+  const type = gid('fNType').value;
+  const body = gid('stockFormBody');
+  if(!type){body.innerHTML='';return;}
+  const costField='';
+
+  if(type==='Sticks'){
+    body.innerHTML=`<div class="qty-grid">
+      <div class="qty-row"><span class="qty-label">⚖️ KG</span><input class="qty-input" type="number" id="fNQ_kg" placeholder="0" min="0" step="0.5"></div>
+      <div class="qty-row"><span class="qty-label">📦 100g packs</span><input class="qty-input" type="number" id="fNQ_100g" placeholder="0" min="0" step="1"></div>
+      <div class="qty-row"><span class="qty-label">📦 200g packs</span><input class="qty-input" type="number" id="fNQ_200g" placeholder="0" min="0" step="1"></div>
+      ${costField}
+    </div>`;
+  } else {
+    body.innerHTML=`<div class="qty-grid">
+      <div class="qty-row"><span class="qty-label">⚖️ KG (1000g)</span><input class="qty-input" type="number" id="fNQ_kg" placeholder="0" min="0" step="1"></div>
+      <div class="qty-row"><span class="qty-label">½ Half KG (500g)</span><input class="qty-input" type="number" id="fNQ_halfkg" placeholder="0" min="0" step="1"></div>
+      <div class="qty-row"><span class="qty-label">¼ Quarter KG (250g)</span><input class="qty-input" type="number" id="fNQ_quarterkg" placeholder="0" min="0" step="1"></div>
+      <div class="qty-row"><span class="qty-label">🛍️ Bags 40g</span><input class="qty-input" type="number" id="fNQ_bags40" placeholder="0" min="0" step="1"></div>
+      <div class="qty-row"><span class="qty-label">🛍️ Bags 50g</span><input class="qty-input" type="number" id="fNQ_bags50" placeholder="0" min="0" step="1"></div>
+      ${costField}
+    </div>`;
+  }
+}
+window.renderStockForm=renderStockForm;
+
+// ══ DEBT ══
+let debts=[],dFilt='all',dOpen=new Set(),dEdit=new Set();
+function dPaid(d){return(d.pays||[]).reduce((s,p)=>s+parseFloat(p.amt),0);}
+function dLeft(d){return Math.max(0,parseFloat(d.orig)-dPaid(d));}
+function dFull(d){return dLeft(d)<=0;}
+function dPct(d){return Math.min(100,(dPaid(d)/parseFloat(d.orig))*100);}
+window.dFil=function(f){dFilt=f;gid('dTA').className='tb'+(f==='all'?' ta':'');gid('dTU').className='tb'+(f==='un'?' to':'');gid('dTP').className='tb'+(f==='pd'?' tp':'');dRen();}
+
+function dRen(){
+  let tot=0,col=0;debts.forEach(d=>{tot+=parseFloat(d.orig);col+=dPaid(d);});
+  gid('dT').textContent=fmt(tot);gid('dO').textContent=fmt(tot-col);gid('dC').textContent=fmt(col);
+  let list=debts;
+  if(dFilt==='un')list=debts.filter(d=>!dFull(d));
+  if(dFilt==='pd')list=debts.filter(d=>dFull(d));
+  const el=gid('dList');
+  if(!list.length){el.innerHTML='<div class="empty"><span>💳</span>'+(dFilt==='pd'?'No fully paid debts.':dFilt==='un'?'No unpaid debts ✅':'No debts yet.')+'</div>';return;}
+  el.innerHTML=list.map(d=>dCard(d)).join('');
+}
+function dCard(d){
+  const paid=dPaid(d),left=dLeft(d),pct=dPct(d),full=dFull(d),part=paid>0&&!full;
+  const cc=full?'fp':part?'pt':'',lc=full?'dn':part?'pa':'ow',isO=dOpen.has(d.id),isE=dEdit.has(d.id),bc=full?'pd':part?'pp':'pn';
+  const rows=(d.pays||[]).map((p,i)=>`<div class="pi"><span class="pdt">${fmtD(p.dt)}</span><span class="pam">+ ${fmt(p.amt)}</span><button class="pdl" onclick="dDelP('${d.id}',${i})">✕</button></div>`).join('');
+  const payS=full?'<div style="text-align:center;color:var(--green);font-size:.78rem;padding:6px 0">✓ Fully paid</div>'
+    :`<div class="pht" style="margin-top:10px">Log Payment</div><div class="pf2"><input type="date" id="dpd_${d.id}" value="${today()}"><input type="number" id="dpa_${d.id}" placeholder="£ Amount" step="0.01" min="0.01"><button class="bpay" onclick="dAddP('${d.id}')">+ PAY</button></div>`;
+  const editS=isE?`<div class="ef"><input type="text" id="den_${d.id}" value="${d.name}"><input type="number" id="dea_${d.id}" value="${d.orig}" step="0.01" min="0"></div><button class="bse" onclick="dSaveE('${d.id}')">SAVE CHANGES</button>`:'';
+  const panel=isO?`<div class="dpn op"><div class="pw"><div class="pbl"><span>Paid: ${fmt(paid)}</span><span>Left: ${fmt(left)}</span></div><div class="pb"><div class="pf ${bc}" style="width:${pct}%"></div></div></div>${rows?`<div class="pht">Payment History</div>${rows}`:''}${payS}<div class="cac"><button class="bec" onclick="dTogE('${d.id}')">${isE?'CANCEL':'✎ EDIT'}</button><button class="bdc" onclick="dDel('${d.id}')">🗑 DELETE</button></div>${editS}</div>`:'';
+  return `<div class="dc ${cc}"><div class="ch" onclick="dTogO('${d.id}')"><div><div class="cn${full?' sk':''}">${d.name}</div><div class="cdt">${fmtD(d.dt)}</div></div><div class="ca"><div class="cl2 ${lc}">${fmt(left)}</div><div class="co">of ${fmt(d.orig)}</div></div><span class="cv${isO?' op':''}">▼</span></div>${panel}</div>`;
+}
+window.dTogO=function(id){if(dOpen.has(id)){dOpen.delete(id);dEdit.delete(id);}else dOpen.add(id);dRen();}
+window.dTogE=function(id){if(dEdit.has(id))dEdit.delete(id);else dEdit.add(id);dRen();}
+window.dSaveE=async function(id){const n=gid('den_'+id)?.value.trim(),a=parseFloat(gid('dea_'+id)?.value);if(!n||isNaN(a)||a<=0){alert('Enter valid name and amount.');return;}const i=debts.findIndex(d=>d.id===id);if(i!==-1){debts[i].name=n;debts[i].orig=a;await setDoc(doc(db,'debts',id),debts[i]);}dEdit.delete(id);dRen();}
+window.dAddP=async function(id){const dt=gid('dpd_'+id)?.value,amt=parseFloat(gid('dpa_'+id)?.value);if(isNaN(amt)||amt<=0){alert('Enter a valid amount.');return;}const i=debts.findIndex(d=>d.id===id);if(i===-1)return;const left=dLeft(debts[i]);if(amt>left+0.001){alert('Payment exceeds balance.');return;}if(!debts[i].pays)debts[i].pays=[];debts[i].pays.push({dt,amt});await setDoc(doc(db,'debts',id),debts[i]);}
+window.dDelP=async function(id,i){if(!confirm('Remove payment?'))return;const idx=debts.findIndex(d=>d.id===id);if(idx!==-1){debts[idx].pays.splice(i,1);await setDoc(doc(db,'debts',id),debts[idx]);}}
+window.dDel=async function(id){
+  if(!confirm('Move this debt to trash?'))return;
+  try{
+    const i=debts.findIndex(d=>d.id===id);
+    if(i===-1)return;
+    const item={...debts[i],_trashType:'debt',_trashedAt:today()};
+    await setDoc(doc(db,'trash',id),item);
+    await deleteDoc(doc(db,'debts',id));
+    debts=debts.filter(d=>d.id!==id);
+    dRen();
+  }catch(e){alert('Error: '+e.message);}
+}
+window.dAdd=async function(){const dt=gid('dND').value,name=gid('dNN').value.trim(),orig=parseFloat(gid('dNA').value);if(!name||isNaN(orig)||orig<=0){alert('Enter name and amount.');return;}const id=genId();await setDoc(doc(db,'debts',id),{id,dt,name,orig,pays:[]});gid('dNN').value='';gid('dNA').value='';gid('dND').value=today();}
+
+// ══ FRESH ══
+let fresh=[],fFilt='all',fOpen=new Set(),fEdit=new Set(),fSaleOpen=new Set(),fSaleEdit=new Set();
+
+function salePaidAmt(sl){return(sl.payments||[]).reduce((s,p)=>s+parseFloat(p.amt),0);}
+function saleOwed(sl){return Math.max(0,parseFloat(sl.price||0)-salePaidAmt(sl));}
+function saleCleared(sl){return saleOwed(sl)<=0;}
+function itemTotalOwed(item){
+  return(item.sales||[]).reduce((s,sl)=>{
+    if(sl.saleType==='booking') return s;
+    return s+saleOwed(sl);
+  },0);
+}
+function itemTotalCollected(item){
+  return(item.sales||[]).reduce((s,sl)=>{
+    // only count if it's a sale (not a booking) or if booking has been marked collected
+    if(sl.saleType==='booking') return s;
+    return s+salePaidAmt(sl);
+  },0);
+}
+
+// stock qty helpers
+function totalStockUnits(item){
+  return parseFloat(item.kg||0)+parseInt(item.halfkg||0)+parseInt(item.quarterkg||0)+parseInt(item.bags40||0)+parseInt(item.bags50||0)+parseInt(item.g100||0)+parseInt(item.g200||0);
+}
+function stockSummaryText(item){
+  const parts=[];
+  if(parseFloat(item.kg||0)>0) parts.push(`${item.kg}kg`);
+  if(parseInt(item.halfkg||0)>0) parts.push(`${item.halfkg} x 500g`);
+  if(parseInt(item.quarterkg||0)>0) parts.push(`${item.quarterkg} x 250g`);
+  if(parseInt(item.bags40||0)>0) parts.push(`${item.bags40} x 40g bags`);
+  if(parseInt(item.bags50||0)>0) parts.push(`${item.bags50} x 50g bags`);
+  if(parseInt(item.g100||0)>0) parts.push(`${item.g100} x 100g`);
+  if(parseInt(item.g200||0)>0) parts.push(`${item.g200} x 200g`);
+  return parts.length?parts.join(' · '):'No stock';
+}
+
+window.fFil=function(f){fFilt=f;gid('fTA').className='tb'+(f==='all'?' ta':'');gid('fTO').className='tb'+(f==='ow'?' to':'');gid('fTC').className='tb'+(f==='cl'?' tp':'');fRen();}
+
+function fRen(){
+  let to=0,tc=0,ts=0;
+  fresh.forEach(item=>{to+=itemTotalOwed(item);tc+=itemTotalCollected(item);ts+=(item.sales||[]).length;});
+  gid('fTO2').textContent=fmt(to);
+  gid('fTC2').textContent=fmt(tc);
+  gid('fTS2').textContent=ts;
+  const profitEl=gid('fProfitDisplay');
+  if(profitEl){const profit=tc-globalCostPrice;profitEl.textContent=fmt(profit);profitEl.style.color=profit>=0?'var(--green)':'var(--red2)';}
+  let list=fresh;
+  if(fFilt==='ow')list=fresh.filter(i=>itemTotalOwed(i)>0);
+  if(fFilt==='cl')list=fresh.filter(i=>itemTotalOwed(i)<=0&&(i.sales||[]).length>0);
+  const el=gid('fList');
+  if(!list.length){el.innerHTML='<div class="empty"><span>🥬</span>'+(fFilt==='cl'?'No cleared items.':fFilt==='ow'?'No outstanding balances ✅':'No stock added yet.')+'</div>';return;}
+  el.innerHTML=list.map(item=>fCard(item)).join('');
+}
+
+function buildSizeDropdown(item, selectId){
+  let opts='<option value="" disabled selected>Select what to sell</option>';
+  if(item.type==='Sticks'){
+    if(parseFloat(item.kg||0)>0){
+      opts+=`<option value="kg">KG (${item.kg}kg in stock)</option>`;
+      opts+=`<option value="kg_half">Half = 500g</option>`;
+      opts+=`<option value="kg_quarter">Quarter = 250g</option>`;
+      opts+=`<option value="kg_eighth">Eighth = 125g</option>`;
+    }
+    if(parseInt(item.g100||0)>0) opts+=`<option value="g100">100g packs (${item.g100} in stock)</option>`;
+    if(parseInt(item.g200||0)>0) opts+=`<option value="g200">200g packs (${item.g200} in stock)</option>`;
+  } else {
+    if(parseFloat(item.kg||0)>0){
+      opts+=`<option value="kg">KG (${item.kg}kg in stock)</option>`;
+      opts+=`<option value="kg_half">Half = 500g</option>`;
+      opts+=`<option value="kg_quarter">Quarter = 250g</option>`;
+      opts+=`<option value="kg_eighth">Eighth = 125g</option>`;
+    }
+    if(parseInt(item.halfkg||0)>0) opts+=`<option value="halfkg_unit">½ KG bags (${item.halfkg} in stock)</option>`;
+    if(parseInt(item.quarterkg||0)>0) opts+=`<option value="quarterkg_unit">¼ KG bags (${item.quarterkg} in stock)</option>`;
+    if(parseInt(item.bags40||0)>0||parseInt(item.bags50||0)>0||parseInt(item.bags||0)>0){
+      opts+=`<option value="bags_40g">Bags 40g${parseInt(item.bags40||0)>0?' ('+item.bags40+' in stock)':''}</option>`;
+      opts+=`<option value="bags_50g">Bags 50g${parseInt(item.bags50||0)>0?' ('+item.bags50+' in stock)':''}</option>`;
+    } else {
+      opts+=`<option value="bags_40g">Bags 40g</option>`;
+      opts+=`<option value="bags_50g">Bags 50g</option>`;
+    }
+  }
+  return `<select id="${selectId}" onchange="fSizeChanged('${item.id}')" style="background:var(--card);border:1px solid var(--border);color:var(--text);border-radius:8px;padding:12px;font-family:'DM Sans',sans-serif;font-size:1rem;font-weight:700;outline:none;width:100%;appearance:none;">${opts}</select>`;
+}
+
+function buildSizeRows(item){
+  let rows='';
+  if(parseFloat(item.kg||0)>0) rows+=`<div class="size-row"><span class="size-name">KG (1000g)</span><span class="size-qty sq-ok">${item.kg}kg</span></div>`;
+  if(parseInt(item.halfkg||0)>0) rows+=`<div class="size-row"><span class="size-name">½ Half KG (500g)</span><span class="size-qty sq-ok">${item.halfkg}</span></div>`;
+  if(parseInt(item.quarterkg||0)>0) rows+=`<div class="size-row"><span class="size-name">¼ Quarter KG (250g)</span><span class="size-qty sq-ok">${item.quarterkg}</span></div>`;
+  if(parseInt(item.bags40||0)>0) rows+=`<div class="size-row"><span class="size-name">Bags 40g</span><span class="size-qty sq-ok">${item.bags40}</span></div>`;
+  if(parseInt(item.bags50||0)>0) rows+=`<div class="size-row"><span class="size-name">Bags 50g</span><span class="size-qty sq-ok">${item.bags50}</span></div>`;
+  if(parseInt(item.g100||0)>0) rows+=`<div class="size-row"><span class="size-name">100g packs</span><span class="size-qty sq-ok">${item.g100}</span></div>`;
+  if(parseInt(item.g200||0)>0) rows+=`<div class="size-row"><span class="size-name">200g packs</span><span class="size-qty sq-ok">${item.g200}</span></div>`;
+  return rows||'<div style="color:var(--muted);font-size:.9rem;font-weight:600;padding:8px">No stock remaining</div>';
+}
+
+function fCard(item){
+  const totalOwed=itemTotalOwed(item),totalCol=itemTotalCollected(item);
+  const tc=item.type==='Fahra Red'?'tfr':item.type==='Fahra Green'?'tfg':'tst';
+  const isO=fOpen.has(item.id),isE=fEdit.has(item.id);
+  const hasStock=totalStockUnits(item)>0;
+  const cc=hasStock?'fok':'fos';
+
+  const saleBlocks=(item.sales||[]).map((sl,si)=>{
+    const sPaid=salePaidAmt(sl),sOwed=saleOwed(sl),sCleared=saleCleared(sl);
+    const sPct=parseFloat(sl.price)>0?Math.min(100,(sPaid/parseFloat(sl.price))*100):100;
+    const sbc=sCleared?'md':sPaid>0?'mp':'mn';
+    const sclass=sCleared?'sb-paid':sl.saleType==='booking'?'sb-booking':sPaid>0?'sb-part':'sb-owed';
+    const sowedClass=sCleared?'sc2':sPaid>0?'sp':'so';
+    const isSOp=fSaleOpen.has(item.id+'_'+si);
+    const isEdit=fSaleEdit.has(item.id+'_'+si);
+    const payRows=(sl.payments||[]).map((p,pi)=>
+      `<div class="pay-row"><span class="pay-row-dt">${fmtD(p.dt)}</span><span class="pay-row-amt">+ ${fmt(p.amt)}</span><button class="pay-row-del" onclick="fDelSPay('${item.id}',${si},${pi})">✕</button></div>`
+    ).join('');
+    const addPayForm=sCleared?'<div style="text-align:center;color:var(--green);font-size:.75rem;padding:4px 0">✓ Fully paid</div>'
+      :`<div class="add-pay-form"><input type="date" id="spd_${item.id}_${si}" value="${today()}"><input type="number" id="spa_${item.id}_${si}" placeholder="£ Add payment" step="0.01" min="0.01"><button class="btn-addpay" onclick="fAddSPay('${item.id}',${si})">+ PAY</button></div>`;
+
+    const editForm=isEdit?`
+      <div style="background:var(--surface);border-radius:10px;padding:14px;margin-top:10px;border:1px solid var(--yellow);">
+        <div style="font-size:.7rem;letter-spacing:2px;text-transform:uppercase;color:var(--yellow);margin-bottom:12px;font-weight:700;">✎ EDIT SALE</div>
+        <div class="slf-grid">
+          <input type="date"   id="sed_${item.id}_${si}" value="${sl.dt||today()}">
+          <input type="text"   id="sen_${item.id}_${si}" value="${sl.buyer||''}" placeholder="Buyer name">
+          <input type="text"   id="ses_${item.id}_${si}" value="${sl.size||''}" placeholder="Size (e.g. 5kg, Half bag)">
+          <input type="number" id="seq_${item.id}_${si}" value="${sl.qty||''}" placeholder="Qty" step="0.5" min="0">
+          <input type="number" id="sep_${item.id}_${si}" value="${sl.price||0}" placeholder="£ Sale price" step="0.01" min="0">
+          <input type="number" id="sem_${item.id}_${si}" value="${salePaidAmt(sl)||0}" placeholder="£ Total paid so far" step="0.01" min="0">
+        </div>
+        <button style="width:100%;background:rgba(243,156,18,.2);color:var(--yellow);border:1px solid rgba(243,156,18,.4);border-radius:8px;padding:11px;font-family:'Bebas Neue',sans-serif;font-size:1rem;letter-spacing:2px;cursor:pointer;margin-top:8px;font-weight:700;" onclick="fSaveSaleEdit('${item.id}',${si})">✓ SAVE CHANGES</button>
+        <button style="width:100%;background:none;color:var(--muted);border:1px solid var(--border);border-radius:8px;padding:9px;font-family:'DM Sans',sans-serif;font-size:.9rem;font-weight:600;cursor:pointer;margin-top:6px;" onclick="fTogSaleEdit('${item.id}',${si})">Cancel</button>
+      </div>`:'';
+
+    const collectedBtn=sl.saleType==='booking'?`
+      <div style="margin-bottom:12px;padding:12px;background:rgba(58,134,255,.08);border:1px solid rgba(58,134,255,.3);border-radius:10px;">
+        <div style="font-size:.8rem;font-weight:700;color:#3a86ff;letter-spacing:1px;margin-bottom:10px;">📋 BOOKING — Mark as collected?</div>
+        <div style="display:flex;gap:8px;">
+          <button onclick="fMarkCollected('${item.id}',${si},true)" style="flex:1;padding:12px;border-radius:8px;font-family:'Bebas Neue',sans-serif;font-size:1rem;letter-spacing:2px;cursor:pointer;border:2px solid var(--green);background:rgba(46,204,113,.2);color:var(--green);font-weight:700;">✓ COLLECTED + PAID</button>
+          <button onclick="fMarkCollected('${item.id}',${si},false)" style="flex:1;padding:12px;border-radius:8px;font-family:'Bebas Neue',sans-serif;font-size:1rem;letter-spacing:2px;cursor:pointer;border:2px solid var(--red2);background:rgba(230,57,70,.15);color:var(--red2);font-weight:700;">✓ COLLECTED — NOT PAID</button>
+        </div>
+      </div>`:'';
+
+    const sPanel=isSOp?`<div class="sale-panel op">
+      <div class="mini-prog"><div class="mini-prog-lbl"><span>Paid: ${fmt(sPaid)}</span><span>Owed: ${fmt(sOwed)}</span></div><div class="mini-bar"><div class="mini-fill ${sbc}" style="width:${sPct}%"></div></div></div>
+      <div class="sale-detail-row"><span class="sdrl">Size</span><span class="sdrv">${sl.size||'—'}</span></div>
+      <div class="sale-detail-row"><span class="sdrl">Qty</span><span class="sdrv">${sl.qty}</span></div>
+      <div class="sale-detail-row"><span class="sdrl">Sale Price</span><span class="sdrv">${fmt(sl.price)}</span></div>
+      <div class="sale-detail-row"><span class="sdrl">Paid</span><span class="sdrv g">${fmt(sPaid)}</span></div>
+      <div class="sale-detail-row"><span class="sdrl">Remaining</span><span class="sdrv r">${fmt(sOwed)}</span></div>
+      ${payRows?`<div class="pay-hist"><div class="pay-hist-title">Payments</div>${payRows}</div>`:''}
+      ${collectedBtn}
+      ${addPayForm}
+      ${editForm}
+      <div class="sale-actions">
+        <button class="btn-sedit" onclick="fTogSaleEdit('${item.id}',${si})">✎ EDIT</button>
+        <button class="btn-sdel" onclick="fDelSale('${item.id}',${si})">🗑 DELETE</button>
+      </div>
+    </div>`:'';
+    return `<div class="sale-block ${sclass}"><div class="sale-top" onclick="fTogSale('${item.id}',${si})">
+      <div class="sale-buyer">
+        <div class="sale-buyer-name">${sl.buyer}${sl.saleType==='booking'?' <span style="background:rgba(58,134,255,.2);color:#3a86ff;border:1px solid rgba(58,134,255,.4);border-radius:6px;padding:2px 8px;font-size:.7rem;font-weight:700;letter-spacing:1px;vertical-align:middle;margin-left:6px;">📋 BOOKING</span>':''}</div>
+        <div class="sale-buyer-sub">${fmtD(sl.dt)} · ${sl.size||''} · Qty: ${sl.qty}</div>
+      </div>
+      <div class="sale-right"><div class="sale-owed-lbl">${sCleared?'PAID':'OWED'}</div><div class="sale-owed-val ${sowedClass}">${fmt(sOwed)}</div></div>
+      <span class="cv${isSOp?' op':''}">▼</span>
+    </div>${sPanel}</div>`;
+  }).join('');
+
+  const saleForm=`<div class="slf-wrap">
+    <div class="slf-title">+ New Sale</div>
+    <div style="display:flex;gap:8px;margin-bottom:12px;">
+      <button id="btn_sale_${item.id}" onclick="setSaleType('${item.id}','sale')" style="flex:1;padding:12px;border-radius:8px;font-family:'Bebas Neue',sans-serif;font-size:1.1rem;letter-spacing:2px;cursor:pointer;border:2px solid var(--green);background:rgba(46,204,113,.2);color:var(--green);font-weight:700;">🛒 SALE</button>
+      <button id="btn_book_${item.id}" onclick="setSaleType('${item.id}','booking')" style="flex:1;padding:12px;border-radius:8px;font-family:'Bebas Neue',sans-serif;font-size:1.1rem;letter-spacing:2px;cursor:pointer;border:2px solid var(--border);background:transparent;color:var(--muted);font-weight:700;">📋 BOOKING</button>
+    </div>
+    <input type="hidden" id="fst_${item.id}" value="sale">
+    <div class="slf-grid">
+      <input type="date" id="fsd_${item.id}" value="${today()}">
+      <input type="text" id="fsn_${item.id}" placeholder="Buyer name">
+      ${buildSizeDropdown(item,'fss_'+item.id)}
+      <input type="number" id="fsq_${item.id}" placeholder="Qty" step="1" min="1">
+      <input type="number" id="fsp_${item.id}" placeholder="£ Price (optional)" step="0.01" min="0">
+      <input type="number" id="fsm_${item.id}" placeholder="£ Paid now (optional)" step="0.01" min="0">
+    </div>
+    <!-- CALCULATOR -->
+    <div style="background:#1a1a1a;border:1px solid #444;border-radius:10px;padding:12px;margin-bottom:10px;">
+      <div style="background:#000;border:1px solid #555;border-radius:8px;padding:12px 14px;font-family:'Bebas Neue',sans-serif;font-size:2rem;letter-spacing:1px;color:#ffffff;text-align:right;margin-bottom:10px;min-height:56px;word-break:break-all;" id="calc_display_${item.id}">0</div>
+      <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:6px;">
+        <button onclick="calcBtn('${item.id}','7')" style="padding:16px;border-radius:8px;background:#3a3a3a;color:#ffffff;border:1px solid #555;font-family:'Bebas Neue',sans-serif;font-size:1.4rem;cursor:pointer;font-weight:700;">7</button>
+        <button onclick="calcBtn('${item.id}','8')" style="padding:16px;border-radius:8px;background:#3a3a3a;color:#ffffff;border:1px solid #555;font-family:'Bebas Neue',sans-serif;font-size:1.4rem;cursor:pointer;font-weight:700;">8</button>
+        <button onclick="calcBtn('${item.id}','9')" style="padding:16px;border-radius:8px;background:#3a3a3a;color:#ffffff;border:1px solid #555;font-family:'Bebas Neue',sans-serif;font-size:1.4rem;cursor:pointer;font-weight:700;">9</button>
+        <button onclick="calcBtn('${item.id}','/')" style="padding:16px;border-radius:8px;background:#1a5fff;color:#ffffff;border:none;font-family:'Bebas Neue',sans-serif;font-size:1.4rem;cursor:pointer;font-weight:700;">÷</button>
+        <button onclick="calcBtn('${item.id}','4')" style="padding:16px;border-radius:8px;background:#3a3a3a;color:#ffffff;border:1px solid #555;font-family:'Bebas Neue',sans-serif;font-size:1.4rem;cursor:pointer;font-weight:700;">4</button>
+        <button onclick="calcBtn('${item.id}','5')" style="padding:16px;border-radius:8px;background:#3a3a3a;color:#ffffff;border:1px solid #555;font-family:'Bebas Neue',sans-serif;font-size:1.4rem;cursor:pointer;font-weight:700;">5</button>
+        <button onclick="calcBtn('${item.id}','6')" style="padding:16px;border-radius:8px;background:#3a3a3a;color:#ffffff;border:1px solid #555;font-family:'Bebas Neue',sans-serif;font-size:1.4rem;cursor:pointer;font-weight:700;">6</button>
+        <button onclick="calcBtn('${item.id}','*')" style="padding:16px;border-radius:8px;background:#1a5fff;color:#ffffff;border:none;font-family:'Bebas Neue',sans-serif;font-size:1.4rem;cursor:pointer;font-weight:700;">×</button>
+        <button onclick="calcBtn('${item.id}','1')" style="padding:16px;border-radius:8px;background:#3a3a3a;color:#ffffff;border:1px solid #555;font-family:'Bebas Neue',sans-serif;font-size:1.4rem;cursor:pointer;font-weight:700;">1</button>
+        <button onclick="calcBtn('${item.id}','2')" style="padding:16px;border-radius:8px;background:#3a3a3a;color:#ffffff;border:1px solid #555;font-family:'Bebas Neue',sans-serif;font-size:1.4rem;cursor:pointer;font-weight:700;">2</button>
+        <button onclick="calcBtn('${item.id}','3')" style="padding:16px;border-radius:8px;background:#3a3a3a;color:#ffffff;border:1px solid #555;font-family:'Bebas Neue',sans-serif;font-size:1.4rem;cursor:pointer;font-weight:700;">3</button>
+        <button onclick="calcBtn('${item.id}','-')" style="padding:16px;border-radius:8px;background:#1a5fff;color:#ffffff;border:none;font-family:'Bebas Neue',sans-serif;font-size:1.4rem;cursor:pointer;font-weight:700;">−</button>
+        <button onclick="calcBtn('${item.id}','0')" style="padding:16px;border-radius:8px;background:#3a3a3a;color:#ffffff;border:1px solid #555;font-family:'Bebas Neue',sans-serif;font-size:1.4rem;cursor:pointer;font-weight:700;">0</button>
+        <button onclick="calcBtn('${item.id}','.')" style="padding:16px;border-radius:8px;background:#3a3a3a;color:#ffffff;border:1px solid #555;font-family:'Bebas Neue',sans-serif;font-size:1.4rem;cursor:pointer;font-weight:700;">.</button>
+        <button onclick="calcBtn('${item.id}','C')" style="padding:16px;border-radius:8px;background:#cc0000;color:#ffffff;border:none;font-family:'Bebas Neue',sans-serif;font-size:1.4rem;cursor:pointer;font-weight:700;">C</button>
+        <button onclick="calcBtn('${item.id}','+')" style="padding:16px;border-radius:8px;background:#1a5fff;color:#ffffff;border:none;font-family:'Bebas Neue',sans-serif;font-size:1.4rem;cursor:pointer;font-weight:700;">+</button>
+        <button onclick="calcBtn('${item.id}','=')" style="grid-column:1/-1;padding:16px;border-radius:8px;background:#27ae60;color:#ffffff;border:none;font-family:'Bebas Neue',sans-serif;font-size:1.3rem;letter-spacing:2px;cursor:pointer;font-weight:700;">= USE AS PRICE</button>
+      </div>
+    </div>
+    <button class="bsl" onclick="fLogS('${item.id}')">+ LOG</button>
+  </div>`;
+
+  const convertBox=item.type!=='Sticks'?`
+    <div style="background:rgba(58,134,255,.08);border:1px solid rgba(58,134,255,.3);border-radius:12px;padding:14px;margin-top:14px;">
+      <div style="font-size:.85rem;letter-spacing:2px;text-transform:uppercase;color:#3a86ff;margin-bottom:12px;font-weight:800;">🔄 Convert KG → Bags</div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:8px;">
+        <input type="number" id="cvkg_${item.id}" placeholder="KG to convert" step="0.5" min="0.5" style="background:var(--card);border:1px solid var(--border);color:var(--text);border-radius:8px;padding:12px;font-family:'DM Sans',sans-serif;font-size:1rem;font-weight:700;outline:none;width:100%;" oninput="showConvertResult('${item.id}')">
+        <select id="cvtype_${item.id}" style="background:var(--card);border:1px solid var(--border);color:var(--text);border-radius:8px;padding:12px;font-family:'DM Sans',sans-serif;font-size:1rem;font-weight:700;outline:none;width:100%;appearance:none;" onchange="showConvertResult('${item.id}')">
+          <option value="" disabled selected>Bag size</option>
+          <option value="40">40g bags</option>
+          <option value="50">50g bags</option>
+        </select>
+      </div>
+      <div id="cvresult_${item.id}" style="font-size:.9rem;color:var(--green);margin-bottom:8px;text-align:center;font-weight:700;min-height:20px;"></div>
+      <button onclick="doConvert('${item.id}')" style="width:100%;background:rgba(58,134,255,.2);color:#3a86ff;border:1px solid rgba(58,134,255,.4);border-radius:8px;padding:12px;font-family:'Bebas Neue',sans-serif;font-size:1.1rem;letter-spacing:2px;cursor:pointer;font-weight:700;">CONVERT</button>
+    </div>`:'';
+
+  const panel=isO?`<div class="fp3 op">
+    <div class="sizes-title">Current Stock</div>
+    ${buildSizeRows(item)}
+    <div class="mr" style="margin-top:10px"><span class="mrl">Total Collected</span><span class="mrv g">${fmt(totalCol)}</span></div>
+    <div class="mr"><span class="mrl">Total Owed</span><span class="mrv r">${fmt(totalOwed)}</span></div>
+    ${globalCostPrice>0?`<div class="mr" style="background:rgba(46,204,113,.08);border-radius:8px;padding:10px;border:1px solid rgba(46,204,113,.25);margin-top:4px;"><span class="mrl" style="color:var(--green);font-weight:800;">💰 Profit So Far</span><span class="mrv g">${fmt(totalCol-globalCostPrice)}</span></div>`:''}
+    ${convertBox}
+    ${(item.sales||[]).length?`<div class="slt">Sales (${(item.sales||[]).length})</div>${saleBlocks}`:''}
+    ${saleForm}
+    ${fEdit.has(item.id)?`
+    <div style="background:rgba(243,156,18,.08);border:1px solid rgba(243,156,18,.3);border-radius:12px;padding:14px;margin-top:10px;">
+      <div style="font-size:.8rem;letter-spacing:2px;text-transform:uppercase;color:var(--yellow);margin-bottom:12px;font-weight:800;">✎ EDIT STOCK</div>
+      <div class="slf-grid">
+        <input type="date" id="fed_${item.id}" value="${item.dt||today()}">
+        <input type="text" id="fen_${item.id}" value="${item.name||''}" placeholder="Supplier / Stock Name">
+        <input type="number" id="fekg_${item.id}" value="${item.kg||0}" placeholder="KG (1000g)" step="1" min="0">
+        ${item.type!=='Sticks'?`
+        <input type="number" id="fehalf_${item.id}" value="${item.halfkg||0}" placeholder="Half KG (500g)" step="1" min="0">
+        <input type="number" id="fequarter_${item.id}" value="${item.quarterkg||0}" placeholder="Quarter KG (250g)" step="1" min="0">
+        <input type="number" id="feb40_${item.id}" value="${item.bags40||0}" placeholder="Bags 40g" step="1" min="0">
+        <input type="number" id="feb50_${item.id}" value="${item.bags50||0}" placeholder="Bags 50g" step="1" min="0">
+        `:`
+        <input type="number" id="fe100_${item.id}" value="${item.g100||0}" placeholder="100g packs" step="1" min="0">
+        <input type="number" id="fe200_${item.id}" value="${item.g200||0}" placeholder="200g packs" step="1" min="0">
+        `}
+      </div>
+      <button style="width:100%;background:rgba(243,156,18,.2);color:var(--yellow);border:1px solid rgba(243,156,18,.4);border-radius:8px;padding:12px;font-family:'Bebas Neue',sans-serif;font-size:1.1rem;letter-spacing:2px;cursor:pointer;margin-top:8px;font-weight:700;" onclick="fSaveEdit('${item.id}')">✓ SAVE CHANGES</button>
+      <button style="width:100%;background:none;color:var(--muted);border:1px solid var(--border);border-radius:8px;padding:10px;font-family:'DM Sans',sans-serif;font-size:.95rem;font-weight:700;cursor:pointer;margin-top:6px;" onclick="fTogEdit('${item.id}')">Cancel</button>
+    </div>`:''}
+    <div class="fa2">
+      <button class="bfe" onclick="fTogEdit('${item.id}')">✎ EDIT STOCK</button>
+      <button style="flex:1;background:rgba(46,204,113,.15);color:var(--green);border:1px solid rgba(46,204,113,.3);border-radius:8px;padding:8px;font-size:.72rem;letter-spacing:1px;text-transform:uppercase;cursor:pointer;font-weight:700;" onclick="fComplete('${item.id}')">✅ COMPLETED</button>
+      <button class="bfd" onclick="fDel('${item.id}')">🗑 DELETE</button>
+    </div>
+  </div>`:'';
+
+  return `<div class="fc ${cc}"><div class="fh" onclick="fTogO('${item.id}')">
+    <div class="ffl">
+      <div class="ffn">${item.type}${item.name?' — '+item.name:''} <span style="color:#aaaaaa;font-size:.95rem;font-weight:700;">${fmtD(item.dt)}</span></div>
+      <div class="ffm"><span class="tyb ${tc}">${item.type}</span><span class="stock-remaining">${stockSummaryText(item)}</span></div>
+    </div>
+    <div class="ffr">
+      <div class="ffv ${itemTotalOwed(item)>0?'ro':'go'}">${fmt(itemTotalOwed(item))}</div>
+      <div class="ffs">owed</div>
+    </div>
+    <span class="cv${isO?' op':''}">▼</span>
+  </div>${panel}</div>`;
+}
+
+window.fMarkCollected=async function(id,si,paid){
+  const i=fresh.findIndex(f=>f.id===id);if(i===-1)return;
+  const sl=fresh[i].sales[si];
+  // Convert booking to normal sale
+  sl.saleType='sale';
+  // If paid, add a payment for the full price
+  if(paid&&parseFloat(sl.price||0)>0){
+    const alreadyPaid=salePaidAmt(sl);
+    const remaining=parseFloat(sl.price)-alreadyPaid;
+    if(remaining>0){
+      if(!sl.payments)sl.payments=[];
+      sl.payments.push({dt:today(),amt:remaining});
+    }
+  }
+  await setDoc(doc(db,'fresh',id),fresh[i]);
+  fRen();
+}
+// Global cost price
+let globalCostPrice=0;
+
+window.fSaveCost=async function(){
+  const cost=parseFloat(gid('fCostPrice')?.value||0);
+  if(isNaN(cost)||cost<0){alert('Enter a valid cost price.');return;}
+  globalCostPrice=cost;
+  await setDoc(doc(db,'settings','costPrice'),{value:cost,dt:today()});
+  updateCostDisplay();
+}
+
+function updateCostDisplay(){
+  const el=gid('fCostDisplay');
+  const profitEl=gid('fProfitDisplay');
+  if(el){
+    if(globalCostPrice>0){
+      el.textContent=`✓ Saved: £${globalCostPrice.toFixed(2)}`;
+      el.style.color='var(--green)';
+      gid('fCostPrice').value=globalCostPrice;
+    } else {
+      el.textContent='Enter your cost above';
+      el.style.color='var(--muted)';
+    }
+  }
+  // update profit
+  if(profitEl){
+    let totalCol=0;
+    fresh.forEach(item=>{totalCol+=itemTotalCollected(item);});
+    const profit=totalCol-globalCostPrice;
+    profitEl.textContent=fmt(profit);
+    profitEl.style.color=profit>=0?'var(--green)':'var(--red2)';
+  }
+  fRen();
+}
+
+window.setSaleType=function(id,type){
+  const saleBtn=gid('btn_sale_'+id);
+  const bookBtn=gid('btn_book_'+id);
+  const hidden=gid('fst_'+id);
+  if(!saleBtn||!bookBtn||!hidden)return;
+  hidden.value=type;
+  if(type==='sale'){
+    saleBtn.style.cssText='flex:1;padding:12px;border-radius:8px;font-family:Bebas Neue,sans-serif;font-size:1.1rem;letter-spacing:2px;cursor:pointer;border:2px solid var(--green);background:rgba(46,204,113,.2);color:var(--green);font-weight:700;';
+    bookBtn.style.cssText='flex:1;padding:12px;border-radius:8px;font-family:Bebas Neue,sans-serif;font-size:1.1rem;letter-spacing:2px;cursor:pointer;border:2px solid var(--border);background:transparent;color:var(--muted);font-weight:700;';
+  } else {
+    bookBtn.style.cssText='flex:1;padding:12px;border-radius:8px;font-family:Bebas Neue,sans-serif;font-size:1.1rem;letter-spacing:2px;cursor:pointer;border:2px solid #3a86ff;background:rgba(58,134,255,.2);color:#3a86ff;font-weight:700;';
+    saleBtn.style.cssText='flex:1;padding:12px;border-radius:8px;font-family:Bebas Neue,sans-serif;font-size:1.1rem;letter-spacing:2px;cursor:pointer;border:2px solid var(--border);background:transparent;color:var(--muted);font-weight:700;';
+  }
+}
+window.showConvertResult=function(id){
+  const kg=parseFloat(gid('cvkg_'+id)?.value||0);
+  const bagSize=parseInt(gid('cvtype_'+id)?.value||0);
+  const resultEl=gid('cvresult_'+id);
+  if(!resultEl)return;
+  if(kg>0&&bagSize>0){
+    const bags=Math.floor((kg*1000)/bagSize);
+    resultEl.textContent=`${kg}kg ÷ ${bagSize}g = ${bags} bags added to stock`;
+  } else {
+    resultEl.textContent='';
+  }
+}
+
+window.doConvert=async function(id){
+  const kg=parseFloat(gid('cvkg_'+id)?.value||0);
+  const bagSize=parseInt(gid('cvtype_'+id)?.value||0);
+  if(kg<=0){alert('Enter KG to convert.');return;}
+  if(!bagSize){alert('Select bag size.');return;}
+  const i=fresh.findIndex(f=>f.id===id);if(i===-1)return;
+  const item=fresh[i];
+  const currentKg=parseFloat(item.kg||0);
+  if(kg>currentKg+0.001){alert(`Only ${currentKg}kg in stock.`);return;}
+  const bags=Math.floor((kg*1000)/bagSize);
+  if(bags===0){alert('Not enough KG.');return;}
+  const actualKgUsed=parseFloat(((bags*bagSize)/1000).toFixed(3));
+  item.kg=parseFloat((currentKg-actualKgUsed).toFixed(3));
+  if(bagSize===40){item.bags40=parseInt(item.bags40||0)+bags;}
+  else{item.bags50=parseInt(item.bags50||0)+bags;}
+  await setDoc(doc(db,'fresh',id),item);
+  gid('cvkg_'+id).value='';
+  if(gid('cvtype_'+id))gid('cvtype_'+id).value='';
+  if(gid('cvresult_'+id))gid('cvresult_'+id).textContent='';
+  fRen();
+}
+
+// Calculator
+const calcState={};
+window.calcBtn=function(id,btn){
+  if(!calcState[id])calcState[id]={expr:'',display:'0'};
+  const s=calcState[id];
+  const el=gid('calc_display_'+id);
+  if(btn==='C'){s.expr='';s.display='0';}
+  else if(btn==='='){
+    try{
+      const result=parseFloat(eval(s.expr).toFixed(2));
+      s.display=String(result);
+      s.expr=String(result);
+      // put result into price field
+      const priceEl=gid('fsp_'+id);
+      if(priceEl)priceEl.value=result;
+    }catch(e){s.display='Error';s.expr='';}
+  } else {
+    if(s.expr===''&&['+','-','*','/'].includes(btn))return;
+    s.expr+=btn;
+    s.display=s.expr;
+  }
+  if(el)el.textContent=s.display;
+}
+
+window.fTogEdit=function(id){if(fEdit.has(id))fEdit.delete(id);else fEdit.add(id);fRen();}
+
+window.fSaveEdit=async function(id){
+  const i=fresh.findIndex(f=>f.id===id);if(i===-1)return;
+  const item=fresh[i];
+  item.dt=gid('fed_'+id)?.value||item.dt;
+  item.name=gid('fen_'+id)?.value.trim()||'';
+  item.kg=parseFloat(gid('fekg_'+id)?.value||0);
+  if(item.type!=='Sticks'){
+    item.halfkg=parseInt(gid('fehalf_'+id)?.value||0);
+    item.quarterkg=parseInt(gid('fequarter_'+id)?.value||0);
+    item.bags40=parseInt(gid('feb40_'+id)?.value||0);
+    item.bags50=parseInt(gid('feb50_'+id)?.value||0);
+  } else {
+    item.g100=parseInt(gid('fe100_'+id)?.value||0);
+    item.g200=parseInt(gid('fe200_'+id)?.value||0);
+  }
+  await setDoc(doc(db,'fresh',id),item);
+  fEdit.delete(id);
+  fRen();
+}
+
+window.fTogO=function(id){if(fOpen.has(id)){fOpen.delete(id);fEdit.delete(id);}else fOpen.add(id);fRen();}
+window.fTogSale=function(id,si){const k=id+'_'+si;if(fSaleOpen.has(k))fSaleOpen.delete(k);else fSaleOpen.add(k);fRen();}
+window.fTogSaleEdit=function(id,si){const k=id+'_'+si;if(fSaleEdit.has(k))fSaleEdit.delete(k);else fSaleEdit.add(k);fRen();}
+window.fSaveSaleEdit=async function(id,si){
+  const dt    = gid('sed_'+id+'_'+si)?.value;
+  const buyer = gid('sen_'+id+'_'+si)?.value.trim();
+  const size  = gid('ses_'+id+'_'+si)?.value.trim();
+  const qty   = parseFloat(gid('seq_'+id+'_'+si)?.value)||0;
+  const price = parseFloat(gid('sep_'+id+'_'+si)?.value)||0;
+  const totalPaidNew = parseFloat(gid('sem_'+id+'_'+si)?.value)||0;
+  if(!buyer){alert('Enter buyer name.');return;}
+  if(qty<=0){alert('Enter qty.');return;}
+  const i=fresh.findIndex(f=>f.id===id);if(i===-1)return;
+  const sl=fresh[i].sales[si];
+  sl.dt=dt;
+  sl.buyer=buyer;
+  sl.size=size||sl.size;
+  sl.qty=qty;
+  sl.price=price;
+  // update payments to match new total paid
+  const currentPaid=salePaidAmt(sl);
+  if(totalPaidNew!==currentPaid){
+    // replace all payments with a single adjusted entry
+    sl.payments=[{dt:dt,amt:totalPaidNew}];
+  }
+  await setDoc(doc(db,'fresh',id),fresh[i]);
+  fSaleEdit.delete(id+'_'+si);
+  fRen();
+}
+// bag size label map
+const BAG_LABELS={'bags_40g':'40g bags','bags_50g':'50g bags'};
+const KG_SUB={'kg_eighth':'⅛kg (125g)','kg_quarter':'¼kg (250g)','kg_half':'½kg (500g)'};
+
+window.fSizeChanged=function(id){ /* just triggers re-render via dropdown change */ }
+
+window.fLogS=async function(id){
+  const dt=gid('fsd_'+id)?.value;
+  const buyer=gid('fsn_'+id)?.value.trim();
+  const sizeKey=gid('fss_'+id)?.value;
+  const qty=parseFloat(gid('fsq_'+id)?.value);
+  const price=parseFloat(gid('fsp_'+id)?.value)||0;
+  const paidNow=parseFloat(gid('fsm_'+id)?.value)||0;
+  if(!buyer){alert('Enter buyer name.');return;}
+  if(!sizeKey){alert('Select what to sell.');return;}
+  if(isNaN(qty)||qty<=0){alert('Enter qty sold.');return;}
+  if(paidNow>price+0.001&&price>0){alert('Paid cannot exceed sale price.');return;}
+
+  // Always fetch latest from Firebase to avoid stale stock data
+  const snap=await getDoc(doc(db,'fresh',id));
+  if(!snap.exists()){alert('Stock item not found.');return;}
+  const item=snap.data();
+
+  let sizeLabel='';
+
+  if(sizeKey==='kg'){
+    const current=parseFloat(item.kg||0);
+    if(qty>current+0.001){alert(`Only ${current}kg in stock.`);return;}
+    item.kg=Math.max(0,parseFloat((current-qty).toFixed(3)));
+    sizeLabel=`${qty}kg`;
+  } else if(sizeKey==='kg_eighth'){
+    const current=parseFloat(item.kg||0);
+    const qtyKg=qty*0.125;
+    if(qtyKg>current+0.001){alert(`Only ${current}kg in stock.`);return;}
+    item.kg=Math.max(0,parseFloat((current-qtyKg).toFixed(3)));
+    sizeLabel=`${qty} x ⅛kg (125g)`;
+  } else if(sizeKey==='kg_quarter'){
+    const current=parseFloat(item.kg||0);
+    const qtyKg=qty*0.25;
+    if(qtyKg>current+0.001){alert(`Only ${current}kg in stock.`);return;}
+    item.kg=Math.max(0,parseFloat((current-qtyKg).toFixed(3)));
+    sizeLabel=`${qty} x ¼kg (250g)`;
+  } else if(sizeKey==='kg_half'){
+    const current=parseFloat(item.kg||0);
+    const qtyKg=qty*0.5;
+    if(qtyKg>current+0.001){alert(`Only ${current}kg in stock.`);return;}
+    item.kg=Math.max(0,parseFloat((current-qtyKg).toFixed(3)));
+    sizeLabel=`${qty} x ½kg (500g)`;
+  } else if(sizeKey==='halfkg_unit'){
+    const current=parseInt(item.halfkg||0);
+    if(qty>current){alert(`Only ${current} x ½KG bags in stock.`);return;}
+    item.halfkg=current-qty;
+    sizeLabel=`${qty} x ½KG (500g)`;
+  } else if(sizeKey==='quarterkg_unit'){
+    const current=parseInt(item.quarterkg||0);
+    if(qty>current){alert(`Only ${current} x ¼KG bags in stock.`);return;}
+    item.quarterkg=current-qty;
+    sizeLabel=`${qty} x ¼KG (250g)`;
+  } else if(sizeKey==='g100'){
+    const current=parseInt(item.g100||0);
+    if(qty>current){alert(`Only ${current} x 100g packs in stock.`);return;}
+    item.g100=current-qty;
+    sizeLabel=`${qty} x 100g`;
+  } else if(sizeKey==='g200'){
+    const current=parseInt(item.g200||0);
+    if(qty>current){alert(`Only ${current} x 200g packs in stock.`);return;}
+    item.g200=current-qty;
+    sizeLabel=`${qty} x 200g`;
+  } else if(sizeKey.startsWith('bags_')){
+    const bagField=sizeKey==='bags_40g'?'bags40':'bags50';
+    const current=parseInt(item[bagField]||0);
+    if(qty>current){alert(`Only ${current} of those bags in stock.`);return;}
+    item[bagField]=current-qty;
+    sizeLabel=`${qty} x ${sizeKey==='bags_40g'?'40g bags':'50g bags'}`;
+  }
+
+  const saleType=gid('fst_'+id)?.value||'sale';
+  const sale={id:genId(),dt,buyer,size:sizeLabel,qty,price,saleType,payments:[]};
+  if(paidNow>0)sale.payments.push({dt,amt:paidNow});
+  if(!item.sales)item.sales=[];
+  item.sales.push(sale);
+  await setDoc(doc(db,'fresh',id),item);
+  // Update local array immediately so UI reflects change before onSnapshot fires
+  const localIdx=fresh.findIndex(f=>f.id===id);
+  if(localIdx!==-1)fresh[localIdx]=item;
+  gid('fsn_'+id).value='';gid('fsq_'+id).value='';gid('fsp_'+id).value='';gid('fsm_'+id).value='';
+  if(gid('fss_'+id))gid('fss_'+id).value='';
+  fRen();
+}
+
+window.fAddSPay=async function(id,si){
+  const dt=gid('spd_'+id+'_'+si)?.value,amt=parseFloat(gid('spa_'+id+'_'+si)?.value);
+  if(isNaN(amt)||amt<=0){alert('Enter a valid amount.');return;}
+  const i=fresh.findIndex(f=>f.id===id);if(i===-1)return;
+  const sl=fresh[i].sales[si];
+  if(amt>saleOwed(sl)+0.001){alert('Payment exceeds balance.');return;}
+  if(!sl.payments)sl.payments=[];
+  sl.payments.push({dt,amt});
+  await setDoc(doc(db,'fresh',id),fresh[i]);
+}
+window.fDelSPay=async function(id,si,pi){if(!confirm('Remove payment?'))return;const i=fresh.findIndex(f=>f.id===id);if(i!==-1){fresh[i].sales[si].payments.splice(pi,1);await setDoc(doc(db,'fresh',id),fresh[i]);}}
+window.fDelSale=async function(id,si){if(!confirm('Delete this sale?'))return;const i=fresh.findIndex(f=>f.id===id);if(i!==-1){fresh[i].sales.splice(si,1);await setDoc(doc(db,'fresh',id),fresh[i]);}}
+window.fDel=async function(id){
+  if(!confirm('Move this stock to trash?'))return;
+  try{
+    const i=fresh.findIndex(f=>f.id===id);
+    if(i===-1)return;
+    const item={...fresh[i],_trashType:'fresh',_trashedAt:today()};
+    await setDoc(doc(db,'trash',id),item);
+    await deleteDoc(doc(db,'fresh',id));
+    fresh=fresh.filter(f=>f.id!==id);
+    fRen();
+  }catch(e){alert('Error: '+e.message);}
+}
+
+window.fComplete=async function(id){
+  if(!confirm('Mark this stock as completed? It will be saved to the archive and removed from the main page.'))return;
+  try{
+    const snap=await getDoc(doc(db,'fresh',id));
+    if(!snap.exists()){alert('Item not found.');return;}
+    const item=snap.data();
+
+    // Use the stock item's own date as the archive key — keeps each week separate
+    const weekKey=item.dt||new Date().toISOString().slice(0,10);
+    const weekLabel=new Date(weekKey+'T00:00:00').toLocaleDateString('en-GB',{weekday:'long',day:'numeric',month:'long',year:'numeric'});
+    const monthKey=weekKey.slice(0,7);
+
+    // Build sales list for this item
+    const itemSales=(item.sales||[])
+      .filter(sl=>sl.saleType!=='booking'||sl.collected)
+      .map(sl=>({
+        buyer:sl.buyer,type:item.type,size:sl.size||'—',
+        dt:sl.dt,qty:sl.qty,price:parseFloat(sl.price||0),
+        paid:salePaidAmt(sl),owed:saleOwed(sl)
+      }));
+
+    const archiveDocId=weekKey+'_'+id;
+    const archiveRef=doc(db,'weeklyArchive',archiveDocId);
+    const archiveData={
+      _docId:archiveDocId,
+      weekKey,
+      weekLabel,
+      monthKey,
+      stockId:id,
+      stockName:item.name||'',
+      stockType:item.type||'',
+      sales:itemSales,
+      totalPaid:itemSales.reduce((s,sl)=>s+sl.paid,0),
+      totalOwed:itemSales.reduce((s,sl)=>s+sl.owed,0),
+      totalPrice:itemSales.reduce((s,sl)=>s+sl.price,0),
+      savedAt:new Date().toISOString()
+    };
+
+    await setDoc(archiveRef,archiveData);
+    await deleteDoc(doc(db,'fresh',id));
+    fresh=fresh.filter(f=>f.id!==id);
+    fRen();
+    alert(`✅ Saved — ${weekLabel}`);
+  }catch(e){alert('Error: '+e.message);}
+}
+
+window.fAdd=async function(){
+  const dt=gid('fND').value;
+  const name=gid('fNName').value.trim();
+  const type=gid('fNType').value;
+  if(!type){alert('Select a type.');return;}
+  const id=genId();
+  const item={id,dt,name:name||'',type,sales:[]};
+  const kg=parseFloat(gid('fNQ_kg')?.value||0);
+  if(type==='Sticks'){
+    const g100=parseInt(gid('fNQ_100g')?.value||0);
+    const g200=parseInt(gid('fNQ_200g')?.value||0);
+    if(kg<=0&&g100<=0&&g200<=0){alert('Enter at least one quantity.');return;}
+    item.kg=kg; item.g100=g100; item.g200=g200;
+  } else {
+    const bags40=parseInt(gid('fNQ_bags40')?.value||0);
+    const bags50=parseInt(gid('fNQ_bags50')?.value||0);
+    const halfkg=parseInt(gid('fNQ_halfkg')?.value||0);
+    const quarterkg=parseInt(gid('fNQ_quarterkg')?.value||0);
+    if(kg<=0&&bags40<=0&&bags50<=0&&halfkg<=0&&quarterkg<=0){alert('Enter at least one quantity.');return;}
+    item.kg=kg; item.halfkg=halfkg; item.quarterkg=quarterkg; item.bags40=bags40; item.bags50=bags50;
+  }
+  await setDoc(doc(db,'fresh',id),item);
+  gid('fNType').value='';
+  gid('fNName').value='';
+  gid('stockFormBody').innerHTML='';
+  gid('fND').value=today();
+}
+
+// REPORT
+function buildReport(){
+  const now=new Date();
+  const ds=now.toLocaleDateString('en-GB',{weekday:'long',year:'numeric',month:'long',day:'numeric'});
+  const rpDate=gid('rpDate');if(rpDate)rpDate.textContent='Generated: '+ds;
+  if(!fresh.length){gid('rContent').innerHTML='<div style="padding:20px;text-align:center;color:var(--muted);font-weight:700;">No stock entries found.</div>';return;}
+  let html=`<div style="background:var(--surface);border:2px solid var(--border);border-radius:12px;padding:14px;margin-bottom:14px;">
+    <div style="font-family:'Bebas Neue',sans-serif;font-size:1rem;letter-spacing:2px;color:var(--yellow);margin-bottom:10px;">📦 SELECT STOCK TO VIEW</div>
+    <div style="display:flex;flex-direction:column;gap:8px;" id="stockSelector">`;
+  fresh.forEach(item=>{
+    const sc=(item.sales||[]).filter(sl=>!(sl.saleType==='booking'&&!sl.collected)).length;
+    const lbl=`${item.name||item.type} — ${fmtD(item.dt)} (${sc} sales)`;
+    html+=`<label style="display:flex;align-items:center;gap:10px;background:var(--card);border-radius:8px;padding:10px 14px;cursor:pointer;"><input type="checkbox" class="stock-sel" data-id="${String(item.id)}" style="width:20px;height:20px;accent-color:var(--yellow);cursor:pointer;"><span style="font-weight:800;font-size:.9rem;color:var(--text);">${lbl}</span></label>`;
+  });
+  html+=`</div><div style="display:flex;gap:8px;margin-top:10px;">
+    <button onclick="selectAllStock(true)" style="flex:1;background:rgba(243,156,18,.15);color:var(--yellow);border:1px solid rgba(243,156,18,.3);border-radius:8px;padding:10px;font-family:'Bebas Neue',sans-serif;font-size:.9rem;cursor:pointer;">✅ ALL</button>
+    <button onclick="selectAllStock(false)" style="flex:1;background:rgba(230,57,70,.1);color:var(--red2);border:1px solid rgba(230,57,70,.3);border-radius:8px;padding:10px;font-family:'Bebas Neue',sans-serif;font-size:.9rem;cursor:pointer;">✕ NONE</button>
+    <button onclick="viewSelectedReport()" style="flex:2;background:rgba(46,204,113,.2);color:var(--green);border:1px solid rgba(46,204,113,.3);border-radius:8px;padding:10px;font-family:'Bebas Neue',sans-serif;font-size:.9rem;cursor:pointer;">👁 VIEW REPORT</button>
+  </div></div><div id="reportResults"></div>`;
+  gid('rContent').innerHTML=html;
+}
+
+window.selectAllStock=function(val){
+  document.querySelectorAll('.stock-sel').forEach(cb=>cb.checked=val);
+}
+
+window.viewSelectedReport=function(){
+  const selectedIds=new Set();
+  document.querySelectorAll('.stock-sel:checked').forEach(cb=>selectedIds.add(cb.dataset.id));
+  const el=gid('reportResults');
+  if(!el)return;
+  if(!selectedIds.size){el.innerHTML='<div style="padding:16px;text-align:center;color:var(--muted);font-weight:700;">Please tick at least one stock entry above.</div>';return;}
+  const stockLabel=gid('rStockLabel')?.value.trim()||'';
+  const manualDate=gid('rManualDate')?.value.trim()||'';
+  // Match by string comparison to be safe
+  const selectedItems=fresh.filter(item=>selectedIds.has(String(item.id)));
+  if(!selectedItems.length){
+    el.innerHTML='<div style="padding:16px;text-align:center;color:var(--muted);font-weight:700;">Could not find selected stock. Try refreshing.</div>';
+    return;
+  }
+  let html='';
+  selectedItems.forEach(item=>{
+    const itemSales=(item.sales||[]).filter(sl=>!(sl.saleType==='booking'&&!sl.collected));
+    const itemLabel=`${item.name||item.type} — ${fmtD(item.dt)}`;
+    if(!itemSales.length){html+=`<div style="background:var(--surface);border:2px solid var(--border);border-radius:12px;padding:14px;margin-bottom:16px;color:var(--muted);font-weight:700;">📦 ${itemLabel}: No sales yet.</div>`;return;}
+    const totalPaid=itemSales.reduce((s,sl)=>s+salePaidAmt(sl),0);
+    const totalOwed=itemSales.reduce((s,sl)=>s+saleOwed(sl),0);
+    const totalPrice=itemSales.reduce((s,sl)=>s+parseFloat(sl.price||0),0);
+    const sid='sr_'+item.id;
+    html+=`<div id="${sid}" style="background:var(--surface);border:2px solid var(--border);border-radius:12px;margin-bottom:20px;overflow:hidden;">
+      <div style="background:rgba(243,156,18,.15);border-bottom:2px solid rgba(243,156,18,.4);padding:12px 14px;">
+        <div style="font-family:'Bebas Neue',sans-serif;font-size:1.1rem;letter-spacing:2px;color:var(--yellow);margin-bottom:8px;">📦 ${itemLabel}</div>
+        <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:6px;margin-bottom:10px;">
+          <div style="background:var(--card);border-radius:8px;padding:8px;text-align:center;"><div style="font-size:.6rem;color:var(--muted);font-weight:800;text-transform:uppercase;">Collected</div><div style="font-family:'Bebas Neue',sans-serif;font-size:1.3rem;color:var(--green);">${fmt(totalPaid)}</div></div>
+          <div style="background:var(--card);border-radius:8px;padding:8px;text-align:center;"><div style="font-size:.6rem;color:var(--muted);font-weight:800;text-transform:uppercase;">Owed</div><div style="font-family:'Bebas Neue',sans-serif;font-size:1.3rem;color:var(--red2);">${fmt(totalOwed)}</div></div>
+          <div style="background:var(--card);border-radius:8px;padding:8px;text-align:center;"><div style="font-size:.6rem;color:var(--muted);font-weight:800;text-transform:uppercase;">Sales</div><div style="font-family:'Bebas Neue',sans-serif;font-size:1.3rem;color:#fff;">${itemSales.length}</div></div>
+        </div>
+        <button onclick="printStockReport('${sid}','${itemLabel.replace(/'/g,"")}','${stockLabel.replace(/'/g,"")}','${manualDate.replace(/'/g,"")}')" style="width:100%;background:rgba(46,204,113,.2);color:var(--green);border:1px solid rgba(46,204,113,.3);border-radius:8px;padding:10px;font-family:'Bebas Neue',sans-serif;font-size:1rem;letter-spacing:2px;cursor:pointer;">🖨 PRINT THIS REPORT</button>
+      </div>
+      <div class="sr-body" style="padding:12px;">`;
+    const types=[...new Set(itemSales.map(sl=>sl.type))];
+    types.forEach(type=>{
+      const typeSales=itemSales.filter(sl=>sl.type===type).sort((a,b)=>a.dt>b.dt?-1:1);
+      const tPd=typeSales.reduce((s,sl)=>s+salePaidAmt(sl),0);
+      const tP=typeSales.reduce((s,sl)=>s+parseFloat(sl.price||0),0);
+      const tO=typeSales.reduce((s,sl)=>s+saleOwed(sl),0);
+      const typeColor=type==='Fahra Red'?'var(--red2)':type==='Fahra Green'?'var(--green)':'#4a9eff';
+      const typeEmoji=type==='Fahra Red'?'🔴':type==='Fahra Green'?'🟢':'🔵';
+      html+=`<div style="margin-bottom:14px;"><div style="font-family:'Bebas Neue',sans-serif;font-size:.95rem;letter-spacing:2px;color:${typeColor};margin-bottom:8px;">${typeEmoji} ${type.toUpperCase()} — ${typeSales.length} SALE${typeSales.length!==1?'S':''}</div>
+        <table class="rt"><thead><tr><th>Date</th><th>Name</th><th>Size</th><th>Qty</th><th>Price</th><th>Paid</th><th>Owed</th></tr></thead><tbody>
+        ${typeSales.map(sl=>{const cl=saleOwed(sl)<=0;return`<tr><td>${fmtD(sl.dt)}</td><td class="tdn">${sl.buyer}</td><td>${sl.size||'—'}</td><td>${sl.qty}</td><td>${fmt(parseFloat(sl.price||0))}</td><td class="tdp">${fmt(salePaidAmt(sl))}</td><td class="tdo${cl?' cl':''}">${fmt(saleOwed(sl))}</td></tr>`;}).join('')}
+        <tr class="ttr"><td colspan="4"><strong>TOTAL</strong></td><td><strong>${fmt(tP)}</strong></td><td><strong>${fmt(tPd)}</strong></td><td><strong>${fmt(tO)}</strong></td></tr>
+        </tbody></table></div>`;
+    });
+    html+='</div></div>';
+  });
+  el.innerHTML=html||'<div style="padding:16px;color:var(--muted);font-weight:700;">No sales found.</div>';
+}
+
+window.printStockReport=function(sid,itemLabel,seller,date){
+  const el=document.getElementById(sid);
+  if(!el)return;
+  const body=el.querySelector('.sr-body');
+  const win=window.open('','_blank');
+  win.document.write(`<html><head><title>${itemLabel}</title><style>body{font-family:sans-serif;padding:20px;color:#000;}table{width:100%;border-collapse:collapse;font-size:11px;}th{text-align:left;padding:5px;border-bottom:2px solid #000;}td{padding:5px;border-bottom:1px solid #ccc;}@media print{button{display:none;}}</style></head><body>
+  <div style="text-align:center;border-bottom:2px solid #000;padding-bottom:10px;margin-bottom:16px;">
+    <div style="font-size:20px;font-weight:900;letter-spacing:3px;">FRESH TRACKER REPORT</div>
+    <div style="font-size:13px;margin-top:4px;">${itemLabel}</div>
+    ${seller?`<div style="font-size:12px;">Seller: ${seller}</div>`:''}
+    ${date?`<div style="font-size:12px;">${date}</div>`:''}
+  </div>
+  ${body?body.innerHTML:el.innerHTML}
+  <button onclick="window.print()" style="margin-top:20px;padding:10px 24px;font-size:14px;background:#000;color:#fff;border:none;cursor:pointer;border-radius:6px;">🖨 PRINT</button>
+  </body></html>`);
+  win.document.close();
+}
+
+
+// Save current month to Firebase archive
+window.saveMonthToArchive=async function(){
+  const monthSel=gid('rMonthFilter');
+  const selMonth=monthSel?monthSel.value:'';
+  if(!selMonth||selMonth==='all'){alert('Select a specific month to save.');return;}
+  const allSales=[];
+  fresh.forEach(item=>{
+    (item.sales||[]).forEach(sl=>{
+      if(sl.saleType==='booking'&&!sl.collected)return;
+      allSales.push({buyer:sl.buyer,type:item.type,size:sl.size||'—',dt:sl.dt,qty:sl.qty,price:parseFloat(sl.price||0),paid:salePaidAmt(sl),owed:saleOwed(sl)});
+    });
+  });
+  const monthSales=allSales.filter(sl=>sl.dt&&sl.dt.startsWith(selMonth));
+  if(!monthSales.length){alert('No sales to save for this month.');return;}
+  const totalPaid=monthSales.reduce((s,sl)=>s+sl.paid,0);
+  const totalOwed=monthSales.reduce((s,sl)=>s+sl.owed,0);
+  const totalPrice=monthSales.reduce((s,sl)=>s+sl.price,0);
+  const archiveData={month:selMonth,sales:monthSales,totalPaid,totalOwed,totalPrice,savedAt:new Date().toISOString()};
+  await setDoc(doc(db,'monthlyArchive',selMonth),archiveData);
+  alert(`✅ ${new Date(selMonth+'-01').toLocaleDateString('en-GB',{month:'long',year:'numeric'})} saved to archive!`);
+  loadMonthlyArchive();
+}
+
+async function loadMonthlyArchive(){
+  const el=gid('weeklyArchiveSection');
+  if(!el)return;
+  try{
+    const {collection:col2,getDocs}=await import('https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js');
+    const snap=await getDocs(col2(db,'weeklyArchive'));
+    if(snap.empty){el.innerHTML='';return;}
+
+    // Group weeks by month
+    const byMonth={};
+    snap.docs.forEach(d=>{
+      const arc={...d.data(), _docId: d.id}; // always use real Firestore doc ID
+      const m=arc.monthKey||arc.weekKey?.slice(0,7)||'Unknown';
+      if(!byMonth[m])byMonth[m]=[];
+      byMonth[m].push(arc);
+    });
+
+    const sortedMonths=Object.keys(byMonth).sort().reverse();
+    let aHtml=`<div style="margin-top:20px;border-top:2px solid var(--border);padding-top:16px;">
+      <div style="font-family:'Bebas Neue',sans-serif;font-size:1.2rem;letter-spacing:3px;color:var(--yellow);margin-bottom:12px;">📂 WEEKLY ARCHIVE</div>`;
+
+    sortedMonths.forEach(m=>{
+      const weeks=byMonth[m].sort((a,b)=>b.weekKey.localeCompare(a.weekKey));
+      const [y,mo]=m.split('-');
+      const monthLabel=new Date(y,mo-1).toLocaleDateString('en-GB',{month:'long',year:'numeric'});
+      const mPaid=weeks.reduce((s,w)=>s+w.totalPaid,0);
+      const mOwed=weeks.reduce((s,w)=>s+w.totalOwed,0);
+      const mId='month_'+m.replace('-','_');
+
+      aHtml+=`<div style="background:var(--surface);border:2px solid var(--border);border-radius:12px;margin-bottom:16px;overflow:hidden;">
+        <div onclick="document.getElementById('${mId}').style.display=document.getElementById('${mId}').style.display==='none'?'block':'none'"
+          style="background:rgba(46,204,113,.1);border-bottom:2px solid rgba(46,204,113,.3);padding:10px 14px;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:6px;cursor:pointer;">
+          <div style="font-family:'Bebas Neue',sans-serif;font-size:1.1rem;letter-spacing:2px;color:var(--green);">📅 ${monthLabel.toUpperCase()} ▾</div>
+          <div style="display:flex;gap:10px;">
+            <span style="font-size:.75rem;font-weight:800;color:var(--green);">✅ ${fmt(mPaid)}</span>
+            <span style="font-size:.75rem;font-weight:800;color:var(--red2);">💸 ${fmt(mOwed)}</span>
+            <span style="font-size:.75rem;font-weight:800;color:var(--muted);">${weeks.length} week${weeks.length!==1?'s':''}</span>
+          </div>
+        </div>
+        <div id="${mId}" style="display:none;padding:10px;">`;
+
+      weeks.forEach((arc,wi)=>{
+        const wPaid=arc.totalPaid;
+        const wOwed=arc.totalOwed;
+        const wId=mId+'_w'+wi;
+        const typeMap={};
+        (arc.sales||[]).forEach(sl=>{
+          if(!typeMap[sl.type])typeMap[sl.type]=[];
+          typeMap[sl.type].push(sl);
+        });
+
+        aHtml+=`<div style="margin-bottom:12px;border:1px solid var(--border);border-radius:10px;overflow:hidden;">
+          <div onclick="document.getElementById('${wId}').style.display=document.getElementById('${wId}').style.display==='none'?'block':'none'"
+            style="background:var(--card);padding:8px 12px;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:4px;cursor:pointer;">
+            <div style="font-family:'Bebas Neue',sans-serif;font-size:.95rem;letter-spacing:2px;color:var(--yellow);">📦 ${arc.weekLabel||arc.weekKey}${arc.stockName?' — '+arc.stockName:''} ▾</div>
+            <div style="display:flex;gap:8px;font-size:.75rem;font-weight:800;align-items:center;">
+              <span style="color:var(--green);">✅ ${fmt(wPaid)}</span>
+              <span style="color:var(--red2);">💸 ${fmt(wOwed)}</span>
+              <span style="color:var(--muted);">${arc.sales?.length||0} sales</span>
+            </div>
+          </div>
+          <div id="${wId}" style="display:none;">
+            <div style="padding:6px 10px;border-bottom:1px solid var(--border);display:flex;gap:8px;">
+              <button onclick="printWeek('${arc.weekKey}_${arc.stockId}')" style="flex:1;background:rgba(46,204,113,.15);color:var(--green);border:1px solid rgba(46,204,113,.3);border-radius:8px;padding:10px;font-family:'Bebas Neue',sans-serif;font-size:1rem;letter-spacing:2px;cursor:pointer;">🖨 PRINT</button>
+              <button onclick="deleteWeek('${arc._docId}','${(arc.weekLabel||arc.weekKey).replace(/'/g,'')}')" style="background:rgba(230,57,70,.1);color:var(--red2);border:1px solid rgba(230,57,70,.3);border-radius:8px;padding:10px 14px;font-family:'Bebas Neue',sans-serif;font-size:1rem;letter-spacing:1px;cursor:pointer;">🗑 DELETE</button>
+            </div>`;
+
+        Object.keys(typeMap).forEach(type=>{
+          const typeSales=typeMap[type];
+          const tPd=typeSales.reduce((s,sl)=>s+sl.paid,0);
+          const tO=typeSales.reduce((s,sl)=>s+sl.owed,0);
+          const typeColor=type==='Fahra Red'?'var(--red2)':type==='Fahra Green'?'var(--green)':'#4a9eff';
+          const typeEmoji=type==='Fahra Red'?'🔴':type==='Fahra Green'?'🟢':'🔵';
+          aHtml+=`<div style="padding:8px 10px;">
+            <div style="font-size:.7rem;font-weight:800;letter-spacing:1px;color:${typeColor};margin-bottom:4px;">${typeEmoji} ${type.toUpperCase()}</div>
+            <table class="rt"><thead><tr><th>Date</th><th>Name</th><th>Size</th><th>Qty</th><th>Price</th><th>Paid</th><th>Owed</th></tr></thead><tbody>
+            ${typeSales.map(sl=>{const cl=sl.owed<=0;return`<tr><td>${fmtD(sl.dt)}</td><td class="tdn">${sl.buyer}</td><td>${sl.size}</td><td>${sl.qty}</td><td>${fmt(sl.price)}</td><td class="tdp">${fmt(sl.paid)}</td><td class="tdo${cl?' cl':''}">${fmt(sl.owed)}</td></tr>`;}).join('')}
+            <tr class="ttr"><td colspan="5"><strong>TOTAL</strong></td><td><strong>${fmt(tPd)}</strong></td><td><strong>${fmt(tO)}</strong></td></tr>
+            </tbody></table>
+          </div>`;
+        });
+
+        aHtml+=`</div></div>`;
+      });
+
+      aHtml+='</div></div>';
+    });
+
+    aHtml+='</div>';
+    el.innerHTML=aHtml;
+  }catch(e){console.error('Archive load error:',e);}
+}
+window.trTick=function(btn){
+  const row=btn.closest('.tr-row');
+  const xBtn=row.querySelector('.tr-x');
+  const isActive=btn.dataset.active==='1';
+  xBtn.dataset.active='0';
+  xBtn.textContent='';
+  if(!isActive){
+    btn.dataset.active='1';
+    btn.textContent='✅';
+  } else {
+    btn.dataset.active='0';
+    btn.textContent='';
+  }
+  autoSaveTracking();
+}
+window.trX=function(btn){
+  const row=btn.closest('.tr-row');
+  const tickBtn=row.querySelector('.tr-tick');
+  const isActive=btn.dataset.active==='1';
+  tickBtn.dataset.active='0';
+  tickBtn.textContent='';
+  if(!isActive){
+    btn.dataset.active='1';
+    btn.textContent='❌';
+  } else {
+    btn.dataset.active='0';
+    btn.textContent='';
+  }
+  autoSaveTracking();
+}
+
+window.calcDiff=function(input){
+  const row=input.closest('.tr-row');
+  const sent=parseFloat(row.querySelector('.tr-sent').value)||0;
+  const recv=parseFloat(row.querySelector('.tr-recv').value)||0;
+  const diff=row.querySelector('.tr-diff');
+  if(!diff)return;
+  if(row.querySelector('.tr-sent').value===''&&row.querySelector('.tr-recv').value===''){
+    diff.textContent='—';diff.style.color='var(--muted)';diff.style.borderColor='var(--border)';
+  } else {
+    const missing=Math.max(0, sent-recv);
+    diff.textContent=missing===0?'✓':missing;
+    diff.style.color=missing===0?'var(--green)':'var(--red2)';
+    diff.style.borderColor=missing===0?'rgba(46,204,113,.4)':'rgba(230,57,70,.4)';
+  }
+  updateTrackingTotals();
+}
+
+function updateTrackingTotals(){
+  let totS=0,totR=0;
+  document.querySelectorAll('.tr-row').forEach(row=>{
+    const s=parseFloat(row.querySelector('.tr-sent').value)||0;
+    const r=parseFloat(row.querySelector('.tr-recv').value)||0;
+    totS+=s;totR+=r;
+  });
+  const missing=Math.max(0,totS-totR);
+  const totSEl=document.getElementById('totSent');
+  const totREl=document.getElementById('totRecv');
+  const totMEl=document.getElementById('totMissing');
+  if(totSEl)totSEl.textContent=totS;
+  if(totREl)totREl.textContent=totR;
+  if(totMEl){
+    totMEl.textContent=missing;
+    totMEl.style.color=missing===0&&totS>0?'var(--green)':missing>0?'var(--red2)':'var(--muted)';
+  }
+}
+
+let metaSaveTimer=null;
+function saveReportMeta(){
+  clearTimeout(metaSaveTimer);
+  metaSaveTimer=setTimeout(async function(){
+    try{
+      await setDoc(doc(db,'settings','reportMeta'),{
+        seller:gid('rStockLabel')?.value.trim()||'',
+        date:gid('rManualDate')?.value.trim()||'',
+        stockDate:gid('rStockDate')?.value||''
+      });
+    }catch(e){}
+  },600);
+}
+window.saveReportMeta=saveReportMeta;
+
+let autoSaveTimer=null;
+async function autoSaveTracking(){
+  clearTimeout(autoSaveTimer);
+  autoSaveTimer=setTimeout(async function(){
+    const rows=document.querySelectorAll('.tr-row');
+    const tracking=[];
+    rows.forEach(row=>{
+      tracking.push({
+        num:row.querySelector('.tr-inp').value.trim(),
+        date:row.querySelector('.tr-date').value.trim(),
+        seller:row.querySelector('.tr-seller').value.trim(),
+        sent:row.querySelector('.tr-sent').value.trim(),
+        recv:row.querySelector('.tr-recv').value.trim(),
+        status:row.querySelector('.tr-tick').dataset.active==='1'?'delivered':row.querySelector('.tr-x').dataset.active==='1'?'issue':''
+      });
+    });
+    try{
+      await setDoc(doc(db,'settings','reportData'),{
+        tracking
+      },{merge:true});
+    }catch(e){}
+  },800);
+}
+window.autoSaveTracking=autoSaveTracking;
+window.buildReport=buildReport;
+
+// ══ TRASH ══
+let trashItems=[];
+
+function renderTrash(){
+  const el=gid('trashList');
+  if(!el)return;
+  if(!trashItems.length){
+    el.innerHTML='<div style="text-align:center;padding:40px 20px;color:var(--muted);font-size:.9rem;font-weight:700;"><span style="font-size:2rem;display:block;margin-bottom:8px;">🗑</span>Trash is empty</div>';
+    return;
+  }
+  el.innerHTML=trashItems.map(item=>{
+    const type=item._trashType==='debt'?'💳 DEBT':'🥬 FRESH';
+    const name=item._trashType==='debt'?item.name:`${item.type}${item.name?' — '+item.name:''}`;
+    const detail=item._trashType==='debt'?`Total: ${fmt(item.orig)} · Deleted: ${fmtD(item._trashedAt)}`:`${item.type} · Deleted: ${fmtD(item._trashedAt)}`;
+    return `<div class="trash-item">
+      <div class="trash-info">
+        <div class="trash-type">${type}</div>
+        <div class="trash-name">${name}</div>
+        <div class="trash-detail">${detail}</div>
+      </div>
+      <button class="btn-restore" onclick="restoreItem('${item.id}')">↩ RESTORE</button>
+      <button class="btn-perm-del" onclick="permDelete('${item.id}')">✕</button>
+    </div>`;
+  }).join('');
+}
+
+window.restoreItem=async function(id){
+  const item=trashItems.find(i=>i.id===id);
+  if(!item)return;
+  const col=item._trashType==='debt'?'debts':'fresh';
+  const restored={...item};
+  delete restored._trashType;delete restored._trashedAt;
+  try{
+    await setDoc(doc(db,col,id),restored);
+    await deleteDoc(doc(db,'trash',id));
+    trashItems=trashItems.filter(i=>i.id!==id);
+    if(col==='fresh'){fresh.push(restored);fRen();}
+    else{debts.push(restored);dRen();}
+    renderTrash();
+    alert('✅ Item restored!');
+  }catch(e){alert('Error: '+e.message);}
+}
+
+window.permDelete=async function(id){
+  if(!confirm('Permanently delete? This cannot be undone.'))return;
+  try{
+    await deleteDoc(doc(db,'trash',id));
+    trashItems=trashItems.filter(i=>i.id!==id);
+    renderTrash();
+  }catch(e){alert('Error: '+e.message);}
+}
+
+window.emptyTrash=async function(){
+  if(!trashItems.length){alert('Trash is already empty!');return;}
+  if(!confirm('Permanently delete ALL trash items? This cannot be undone.'))return;
+  try{
+    for(const item of trashItems){
+      await deleteDoc(doc(db,'trash',item.id));
+    }
+    alert('✅ Done! Refresh to confirm.');
+    trashItems=[];
+    renderTrash();
+  }catch(e){alert('Firebase error: '+e.code+'\n'+e.message);}
+}
+
+function startListeners(){
+  onSnapshot(collection(db,'debts'),(snap)=>{
+    debts=snap.docs.map(d=>d.data());
+    debts.sort((a,b)=>a.dt>b.dt?-1:1);
+    dRen();setSynced();
+  },()=>setOffline());
+  onSnapshot(collection(db,'fresh'),(snap)=>{
+    fresh=snap.docs.map(d=>d.data());
+    fresh.sort((a,b)=>a.dt>b.dt?-1:1);
+    fRen();setSynced();
+  },()=>setOffline());
+  onSnapshot(collection(db,'trash'),(snap)=>{
+    trashItems=snap.docs.map(d=>d.data());
+    trashItems.sort((a,b)=>a._trashedAt>b._trashedAt?-1:1);
+    renderTrash();
+  },()=>{});
+  onSnapshot(doc(db,'settings','costPrice'),(snap)=>{
+    if(snap.exists()){globalCostPrice=parseFloat(snap.data().value||0);}
+    else{globalCostPrice=0;}
+    updateCostDisplay();
+  },()=>{});
+  onSnapshot(doc(db,'settings','reportMeta'),(snap)=>{
+    if(!snap.exists())return;
+    const d=snap.data();
+    if(gid('rStockLabel')&&!gid('rStockLabel').value&&d.seller)gid('rStockLabel').value=d.seller;
+    if(gid('rManualDate')&&!gid('rManualDate').value&&d.date)gid('rManualDate').value=d.date;
+    if(gid('rStockDate')&&!gid('rStockDate').value&&d.stockDate)gid('rStockDate').value=d.stockDate;
+  },()=>{});
+}
+</script>
+</body>
+</html>
