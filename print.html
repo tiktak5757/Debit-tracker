@@ -1,0 +1,230 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Print / Statement</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0;}
+body{font-family:Arial,sans-serif;background:#f5f5f5;color:#000;padding:16px;}
+h1{font-size:1.3rem;font-weight:900;margin-bottom:4px;}
+.sub{color:#666;font-size:.85rem;margin-bottom:16px;}
+.btn{width:100%;padding:14px;border:none;border-radius:8px;font-size:1rem;font-weight:900;cursor:pointer;margin-bottom:10px;display:block;text-align:center;}
+.btn-print{background:#000;color:#fff;}
+.btn-wa{background:#25D366;color:#fff;}
+.btn-back{background:#eee;color:#000;}
+.entry{background:#fff;border:2px solid #ddd;border-radius:10px;padding:12px;margin-bottom:10px;display:flex;align-items:center;gap:12px;}
+.entry input{width:24px;height:24px;accent-color:#000;flex-shrink:0;cursor:pointer;}
+.entry-name{font-weight:900;font-size:.95rem;}
+.entry-info{font-size:.8rem;color:#666;margin-top:2px;}
+#loading{text-align:center;padding:40px;font-size:1.1rem;color:#666;}
+table{width:100%;border-collapse:collapse;font-size:13px;margin-bottom:16px;}
+th{background:#f0f0f0;border:1px solid #ccc;padding:8px;text-align:left;font-weight:900;}
+td{border:1px solid #ddd;padding:8px;}
+.tot{background:#f9f9f9;font-weight:900;}
+.green{color:green;font-weight:700;}
+.red{color:red;font-weight:700;}
+.divider{border-top:3px solid #000;margin:20px 0;}
+.stmt-header{text-align:center;margin-bottom:20px;border-bottom:2px solid #000;padding-bottom:12px;}
+.stmt-header h2{font-size:22px;font-weight:900;}
+.stmt-header p{font-size:14px;color:#333;margin-top:4px;}
+@media print{
+  .no-print{display:none!important;}
+  body{padding:10px;background:#fff;}
+}
+</style>
+</head>
+<body>
+<h1>📄 Statement / Print</h1>
+<p class="sub" id="subText">Loading...</p>
+<div id="loading">Loading...</div>
+<div id="picker" style="display:none;"></div>
+<div id="preview" style="display:none;">
+  <div class="no-print">
+    <button class="btn btn-print" onclick="window.print()">🖨 PRINT / SAVE AS PDF</button>
+    <button class="btn btn-wa" id="waBtn" style="display:none;">📲 SHARE ON WHATSAPP</button>
+    <button class="btn btn-back" id="backBtn">← BACK</button>
+  </div>
+  <div id="previewContent"></div>
+</div>
+
+<script type="module">
+import {initializeApp} from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
+import {getFirestore, collection, getDocs, doc, getDoc} from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+
+const app = initializeApp({
+  apiKey:"AIzaSyASLxiPERsMEbNoiE6AhC2BZzuIE1-EMA",
+  authDomain:"fresh-debt-tracker.firebaseapp.com",
+  projectId:"fresh-debt-tracker",
+  storageBucket:"fresh-debt-tracker.firebasestorage.app",
+  messagingSenderId:"830202607329",
+  appId:"1:830202607329:web:0e67a7db4d536eebb2a9a0"
+});
+const db = getFirestore(app);
+
+function fmt(n){return'£'+(parseFloat(n)||0).toFixed(2);}
+function fmtD(d){if(!d)return'';try{const p=d.split('-');return p[2]+'/'+p[1]+'/'+p[0];}catch(e){return d;}}
+function salePaid(sl){return(sl.payments||[]).reduce((s,p)=>s+(parseFloat(p.amt)||0),0)+(parseFloat(sl.paidNow)||0);}
+function saleOwed(sl){return Math.max(0,(parseFloat(sl.price)||0)-salePaid(sl));}
+function show(id){document.getElementById(id).style.display='block';}
+function hide(id){document.getElementById(id).style.display='none';}
+
+const params = new URLSearchParams(window.location.search);
+const debtId = params.get('debt');
+
+async function loadDebtStatement() {
+  document.getElementById('subText').textContent = 'Debt Statement';
+  try {
+    const snap = await getDoc(doc(db, 'debts', debtId));
+    if (!snap.exists()) {
+      document.getElementById('loading').textContent = 'Debt not found.';
+      return;
+    }
+    const d = snap.data();
+    const pays = (d.pays || []).slice().sort((a,b) => (a.dt||'').localeCompare(b.dt||''));
+
+    let rows = [];
+    rows.push({dt: d.dt, particulars: 'Opening Balance', debit: d.orig, credit: 0});
+    pays.forEach(p => {
+      rows.push({dt: p.dt, particulars: p.reason||'Payment received', debit: 0, credit: parseFloat(p.amt)||0});
+    });
+    const additions = d.additions||[];
+    additions.forEach(a => {
+      rows.push({dt: a.dt, particulars: a.reason||'Amount added', debit: parseFloat(a.amt)||0, credit: 0});
+    });
+    rows.sort((a,b) => (a.dt||'').localeCompare(b.dt||''));
+
+    let balance = 0;
+    const rowsWithBal = rows.map(r => {
+      balance += (r.debit||0) - (r.credit||0);
+      balance = Math.max(0, balance);
+      return {...r, balance};
+    });
+
+    const totalDebit = rowsWithBal.reduce((s,r) => s + r.debit, 0);
+    const totalCredit = rowsWithBal.reduce((s,r) => s + r.credit, 0);
+    const finalBal = rowsWithBal.length ? rowsWithBal[rowsWithBal.length-1].balance : 0;
+
+    let html = `<div class="stmt-header"><h2>${d.name}</h2><p>Account Statement &nbsp;|&nbsp; ${new Date().toLocaleDateString('en-GB')}</p></div>`;
+    html += `<table><thead><tr><th>Date</th><th>Particulars</th><th style="text-align:right;color:red;">Debit</th><th style="text-align:right;color:green;">Credit</th><th style="text-align:right;">Balance</th></tr></thead><tbody>`;
+
+    rowsWithBal.forEach(r => {
+      html += `<tr>
+        <td>${fmtD(r.dt)}</td>
+        <td>${r.particulars}</td>
+        <td style="text-align:right;color:${r.debit>0?'red':'#999'};">${r.debit>0?fmt(r.debit):'—'}</td>
+        <td style="text-align:right;color:${r.credit>0?'green':'#999'};">${r.credit>0?fmt(r.credit):'—'}</td>
+        <td style="text-align:right;font-weight:900;color:${r.balance>0?'red':'green'};">${fmt(r.balance)}</td>
+      </tr>`;
+    });
+
+    html += `<tr class="tot"><td colspan="2">TOTAL</td>
+      <td style="text-align:right;color:red;">${fmt(totalDebit)}</td>
+      <td style="text-align:right;color:green;">${fmt(totalCredit)}</td>
+      <td style="text-align:right;color:${finalBal>0?'red':'green'};">${fmt(finalBal)}</td>
+    </tr></tbody></table>`;
+
+    hide('loading');
+    document.getElementById('previewContent').innerHTML = html;
+    show('preview');
+
+    // WhatsApp
+    const waBtn = document.getElementById('waBtn');
+    waBtn.style.display = 'block';
+    waBtn.onclick = function() {
+      let text = `*${d.name} - Account Statement*\n\n`;
+      text += `Date | Particulars | Debit | Credit | Balance\n`;
+      rowsWithBal.forEach(r => {
+        text += `${fmtD(r.dt)} | ${r.particulars} | ${r.debit>0?fmt(r.debit):'—'} | ${r.credit>0?fmt(r.credit):'—'} | ${fmt(r.balance)}\n`;
+      });
+      text += `\n*Balance: ${fmt(finalBal)}*`;
+      window.open('https://wa.me/?text=' + encodeURIComponent(text), '_blank');
+    };
+
+  } catch(e) {
+    document.getElementById('loading').textContent = 'Error: ' + e.message;
+  }
+}
+
+async function loadFreshPicker() {
+  document.getElementById('subText').textContent = 'Tick entries to print together';
+  try {
+    const snap = await getDocs(collection(db, 'fresh'));
+    const allItems = snap.docs.map(d => d.data()).sort((a,b) => (b.dt||'').localeCompare(a.dt||''));
+
+    const picker = document.getElementById('picker');
+    let html = allItems.map((item, i) => {
+      const sales = (item.sales||[]).filter(s => s.saleType !== 'booking');
+      const paid = sales.reduce((s,sl) => s + salePaid(sl), 0);
+      const owed = sales.reduce((s,sl) => s + saleOwed(sl), 0);
+      const label = (item.name ? item.name + ' - ' : '') + item.type + ' - ' + fmtD(item.dt);
+      return `<label class="entry">
+        <input type="checkbox" data-idx="${i}">
+        <div>
+          <div class="entry-name">${label}</div>
+          <div class="entry-info">${sales.length} sales | Collected: ${fmt(paid)} | Owed: ${fmt(owed)}</div>
+        </div>
+      </label>`;
+    }).join('');
+
+    html += `<button class="btn btn-print" id="generateBtn">📋 GENERATE REPORT</button>`;
+    picker.innerHTML = html;
+    hide('loading');
+    show('picker');
+
+    document.getElementById('generateBtn').addEventListener('click', function() {
+      const checked = document.querySelectorAll('#picker input:checked');
+      if (!checked.length) { alert('Tick at least one entry.'); return; }
+
+      let html = '';
+      let n = 0;
+      checked.forEach(cb => {
+        const item = allItems[parseInt(cb.dataset.idx)];
+        if (!item) return;
+        const sales = (item.sales||[]).filter(s => s.saleType !== 'booking').sort((a,b) => (b.dt||'').localeCompare(a.dt||''));
+        const label = (item.name ? item.name + ' - ' : '') + item.type + ' - ' + fmtD(item.dt);
+        const tp = sales.reduce((s,sl) => s + salePaid(sl), 0);
+        const to = sales.reduce((s,sl) => s + saleOwed(sl), 0);
+        if (n > 0) html += '<div class="divider"></div>';
+        html += `<div class="stmt-header"><h2>${label}</h2><p>Sales: ${sales.length} &nbsp; Collected: ${fmt(tp)} &nbsp; Owed: ${fmt(to)}</p></div>`;
+        if (!sales.length) { html += '<p style="text-align:center;color:#666;padding:10px;">No sales recorded.</p>'; n++; return; }
+        const types = [...new Set(sales.map(s => s.type || 'Unknown'))];
+        types.forEach(type => {
+          const ts = sales.filter(s => (s.type||'Unknown') === type);
+          const tP = ts.reduce((s,sl) => s + parseFloat(sl.price||0), 0);
+          const tPd = ts.reduce((s,sl) => s + salePaid(sl), 0);
+          const tO = ts.reduce((s,sl) => s + saleOwed(sl), 0);
+          html += `<div style="font-weight:900;font-size:14px;border-bottom:2px solid #000;padding-bottom:3px;margin:12px 0 6px;">${type.toUpperCase()} — ${ts.length} SALES</div>`;
+          html += '<table><thead><tr><th>Date</th><th>Name</th><th>Size</th><th>Qty</th><th>Price</th><th>Paid</th><th>Owed</th></tr></thead><tbody>';
+          ts.forEach(sl => {
+            const ow = saleOwed(sl);
+            html += `<tr><td>${fmtD(sl.dt)}</td><td><b>${sl.buyer||''}</b></td><td style="text-align:center">${sl.size||'-'}</td><td style="text-align:right">${sl.qty||1}</td><td style="text-align:right">${fmt(sl.price||0)}</td><td class="green" style="text-align:right">${fmt(salePaid(sl))}</td><td class="${ow>0?'red':'green'}" style="text-align:right">${fmt(ow)}</td></tr>`;
+          });
+          html += `<tr class="tot"><td colspan="4">TOTAL</td><td style="text-align:right">${fmt(tP)}</td><td class="green" style="text-align:right">${fmt(tPd)}</td><td class="${tO>0?'red':'green'}" style="text-align:right">${fmt(tO)}</td></tr></tbody></table>`;
+        });
+        n++;
+      });
+
+      document.getElementById('previewContent').innerHTML = html;
+      hide('picker');
+      show('preview');
+      window.scrollTo(0, 0);
+    });
+
+    document.getElementById('backBtn').addEventListener('click', function() {
+      hide('preview');
+      show('picker');
+    });
+
+  } catch(e) {
+    document.getElementById('loading').textContent = 'Error: ' + e.message;
+  }
+}
+
+if (debtId) {
+  loadDebtStatement();
+} else {
+  loadFreshPicker();
+}
+</script>
+</body>
+</html>
